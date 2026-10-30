@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "chemicalist-platform",
+    "title": "Chemicalist Industry Platform",
+    "description": "Multi-Lab modular platform generated from the documented Chemicalist architecture.",
+    "apiPrefix": "api",
+    "apiVersion": "1",
+    "port": 3000,
+    "corsOrigin": "http://localhost:3001"
+  },
+  "outputs": {
+    "webservice": true,
+    "api": true,
+    "frontend": true
+  }
+}

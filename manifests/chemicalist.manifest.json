@@ -1,0 +1,850 @@
+{
+  "format": "chemicalist.catalog",
+  "version": 1,
+  "title": "Chemicalist Industry Platform",
+  "description": "Complete Lab and Studio catalog for a multi-tenant chemical-industry platform. Business records are owned by their Lab; cross-Lab links are references, never direct database relations. Fully aligned with chemicalist.studio-template version 3.",
+  "expected": {
+    "labs": 16,
+    "studios": 93
+  },
+  "capabilities": {
+    "tenantScope": true
+  },
+  "labs": [
+    {
+      "name": "Planning",
+      "slug": "planning",
+      "ownership": "Demand forecasts, supply and production plans, planned capacity, and approved S&OP cycles.",
+      "publicEvents": [
+        "DemandForecastPublished",
+        "SupplyPlanPublished",
+        "ProductionPlanPublished",
+        "CapacityPlanPublished",
+        "SOPCycleApproved"
+      ],
+      "studios": [
+        {
+          "name": "Demand Planning",
+          "slug": "demand-planning",
+          "description": "Demand forecasts, planning periods, scenarios, and approved assumptions.",
+          "entities": [{ "name": "DemandForecast", "profile": "planning" }]
+        },
+        {
+          "name": "Supply Planning",
+          "slug": "supply-planning",
+          "description": "Supply plans and procurement requirements; purchase execution remains owned by Supply Chain.",
+          "entities": [{ "name": "SupplyPlan", "profile": "planning" }],
+          "dependencies": ["supply-chain", "inventory"]
+        },
+        {
+          "name": "Production Planning",
+          "slug": "production-planning",
+          "description": "Planned production schedules; actual orders and execution remain owned by Production.",
+          "entities": [{ "name": "ProductionSchedule", "profile": "planning" }],
+          "dependencies": ["production"]
+        },
+        {
+          "name": "Capacity Planning",
+          "slug": "capacity-planning",
+          "description": "Planned capacity scenarios and operating constraints.",
+          "entities": [{ "name": "CapacityPlan", "profile": "planning" }],
+          "dependencies": ["maintenance-assets", "human-resources"]
+        },
+        {
+          "name": "S&OP",
+          "slug": "sales-operations-planning",
+          "description": "Cross-functional sales and operations planning cycles and approvals.",
+          "entities": [{ "name": "SopCycle", "profile": "planning" }],
+          "dependencies": ["sales-distribution", "supply-chain", "production", "finance"]
+        }
+      ]
+    },
+    {
+      "name": "Supply Chain",
+      "slug": "supply-chain",
+      "ownership": "Suppliers, supplier assessment, sourcing, procurement, purchasing contracts, and commercial import/export.",
+      "publicEvents": [
+        "SupplierApprovedForBusiness",
+        "PurchaseOrderApproved",
+        "PurchaseOrderChanged",
+        "PurchaseOrderCancelled",
+        "SupplierDeliveryExpected"
+      ],
+      "studios": [
+        {
+          "name": "Supplier Management",
+          "slug": "supplier-management",
+          "description": "Supplier profiles and business qualification records.",
+          "entities": [{ "name": "Supplier", "profile": "master-data" }]
+        },
+        {
+          "name": "Procurement",
+          "slug": "procurement",
+          "description": "Purchase requests and purchase orders; receipt and stock remain owned by Inventory.",
+          "entities": [
+            { "name": "PurchaseRequisition", "profile": "procurement" },
+            { "name": "PurchaseOrder", "profile": "procurement" }
+          ],
+          "dependencies": ["inventory", "finance"]
+        },
+        {
+          "name": "Sourcing",
+          "slug": "sourcing",
+          "description": "Sourcing exercises, supplier comparisons, and source decisions.",
+          "entities": [{ "name": "SourcingDecision", "profile": "procurement" }]
+        },
+        {
+          "name": "Contracts",
+          "slug": "contracts",
+          "description": "Supplier contracts and commercial terms.",
+          "entities": [{ "name": "SupplierContract", "profile": "procurement" }]
+        },
+        {
+          "name": "Import & Export",
+          "slug": "import-export",
+          "description": "Commercial import/export declarations and supporting references.",
+          "entities": [{ "name": "TradeDeclaration", "profile": "compliance" }],
+          "dependencies": ["compliance", "logistics"]
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "slug": "inventory",
+      "ownership": "Physical stock, storage locations, reservations, material movements, counts, and inventory status.",
+      "publicEvents": [
+        "GoodsReceiptRecorded",
+        "StockReserved",
+        "StockReservationReleased",
+        "StockMovementRecorded",
+        "StockCountCompleted",
+        "StockAvailabilityChanged",
+        "InventoryLotQuarantined"
+      ],
+      "studios": [
+        {
+          "name": "Warehouse Management",
+          "slug": "warehouse-management",
+          "description": "Warehouse and controlled storage-area master data.",
+          "entities": [{ "name": "Warehouse", "profile": "master-data" }]
+        },
+        {
+          "name": "Stock Management",
+          "slug": "stock-management",
+          "description": "Stock position and availability records; finance owns monetary valuation.",
+          "entities": [{ "name": "StockPosition", "profile": "inventory" }]
+        },
+        {
+          "name": "Material Tracking",
+          "slug": "material-tracking",
+          "description": "Material identity, lot/batch traceability, and custody references.",
+          "entities": [{ "name": "MaterialLot", "profile": "inventory" }]
+        },
+        {
+          "name": "Storage Management",
+          "slug": "storage-management",
+          "description": "Storage locations, capacity metadata, and handling conditions.",
+          "entities": [{ "name": "StorageLocation", "profile": "master-data" }]
+        },
+        {
+          "name": "Material Movement",
+          "slug": "material-movement",
+          "description": "Goods receipts and immutable movement records for physical inventory.",
+          "entities": [
+            { "name": "GoodsReceipt", "profile": "inventory" },
+            { "name": "StockMovement", "profile": "inventory" }
+          ],
+          "dependencies": ["supply-chain", "production", "quality"]
+        },
+        {
+          "name": "Stocktaking",
+          "slug": "stocktaking",
+          "description": "Stock-count plans, observations, and reconciliation references.",
+          "entities": [{ "name": "StockCount", "profile": "inventory" }]
+        }
+      ]
+    },
+    {
+      "name": "Production",
+      "slug": "production",
+      "ownership": "Production orders, batch execution, material consumption, produced quantity, waste, downtime, and performance.",
+      "publicEvents": [
+        "ProductionOrderReleased",
+        "BatchStarted",
+        "MaterialConsumptionRecorded",
+        "ProductionOperationCompleted",
+        "BatchProduced"
+      ],
+      "studios": [
+        {
+          "name": "Production Orders",
+          "slug": "production-orders",
+          "description": "Released production orders based on approved product and process versions.",
+          "entities": [{ "name": "ProductionOrder", "profile": "production" }],
+          "dependencies": ["planning", "product"]
+        },
+        {
+          "name": "Batch Management",
+          "slug": "batch-management",
+          "description": "Batch identity, product/process version snapshots, and batch lifecycle.",
+          "entities": [{ "name": "ProductionBatch", "profile": "production" }],
+          "dependencies": ["product", "process-engineering", "quality"]
+        },
+        {
+          "name": "Production Execution",
+          "slug": "production-execution",
+          "description": "Actual execution records and production operations.",
+          "entities": [{ "name": "ProductionExecution", "profile": "production" }],
+          "dependencies": ["inventory", "human-resources", "maintenance-assets"]
+        },
+        {
+          "name": "Material Consumption",
+          "slug": "material-consumption",
+          "description": "Actual consumed material records; Inventory remains the source of stock movements.",
+          "entities": [{ "name": "MaterialConsumption", "profile": "production" }],
+          "dependencies": ["inventory"]
+        },
+        {
+          "name": "Production Performance",
+          "slug": "production-performance",
+          "description": "Production output, yield, waste, deviations, and downtime measures.",
+          "entities": [{ "name": "ProductionMetric", "profile": "production" }]
+        }
+      ]
+    },
+    {
+      "name": "Process & Engineering",
+      "slug": "process-engineering",
+      "ownership": "Process definitions and parameters, engineering equipment specifications, technical changes, and scale-up assessments.",
+      "publicEvents": [
+        "ProcessDefinitionApproved",
+        "ProcessVersionReleased",
+        "EngineeringChangeProposed",
+        "EngineeringChangeApproved",
+        "ScaleUpAssessmentCompleted"
+      ],
+      "studios": [
+        {
+          "name": "Process Design",
+          "slug": "process-design",
+          "description": "Process definitions and controlled process revisions.",
+          "entities": [{ "name": "ProcessDefinition", "profile": "engineering" }]
+        },
+        {
+          "name": "Process Modeling",
+          "slug": "process-modeling",
+          "description": "Process models and versioned process parameters.",
+          "entities": [{ "name": "ProcessModel", "profile": "engineering" }]
+        },
+        {
+          "name": "Process Optimization",
+          "slug": "process-optimization",
+          "description": "Optimization studies and documented process assumptions.",
+          "entities": [{ "name": "OptimizationStudy", "profile": "engineering" }]
+        },
+        {
+          "name": "Equipment Engineering",
+          "slug": "equipment-engineering",
+          "description": "Engineering specifications for process equipment; asset operations remain owned by Maintenance & Assets.",
+          "entities": [{ "name": "EquipmentSpecification", "profile": "engineering" }],
+          "dependencies": ["maintenance-assets"]
+        },
+        {
+          "name": "Process Change",
+          "slug": "process-change",
+          "description": "Engineering change proposals, approvals, and effective revisions.",
+          "entities": [{ "name": "EngineeringChange", "profile": "engineering" }],
+          "dependencies": ["product", "quality", "compliance"]
+        },
+        {
+          "name": "Scale-up",
+          "slug": "scale-up",
+          "description": "Scale-up assessments from laboratory to industrial process.",
+          "entities": [{ "name": "ScaleUpStudy", "profile": "engineering" }],
+          "dependencies": ["research-development", "production"]
+        }
+      ]
+    },
+    {
+      "name": "R&D",
+      "slug": "research-development",
+      "ownership": "Research projects, experimental formulations, experiment plans, research results, and development candidates.",
+      "publicEvents": [
+        "ResearchProjectApproved",
+        "FormulationVersionCreated",
+        "ExperimentCompleted",
+        "DevelopmentCandidateProposed",
+        "StabilityStudyCompleted"
+      ],
+      "studios": [
+        {
+          "name": "Research Projects",
+          "slug": "research-projects",
+          "description": "Research project scope, objectives, hypotheses, and findings.",
+          "entities": [{ "name": "ResearchProject", "profile": "research" }]
+        },
+        {
+          "name": "Formulation",
+          "slug": "formulation",
+          "description": "Research formulations and versioned experimental composition.",
+          "entities": [{ "name": "ResearchFormulation", "profile": "research" }]
+        },
+        {
+          "name": "Experiment Design",
+          "slug": "experiment-design",
+          "description": "Experiment plans and research assumptions.",
+          "entities": [{ "name": "ExperimentDesign", "profile": "research" }]
+        },
+        {
+          "name": "Product Innovation",
+          "slug": "product-innovation",
+          "description": "Development candidates proposed to Product; this does not create an active commercial product.",
+          "entities": [{ "name": "DevelopmentCandidate", "profile": "research" }],
+          "dependencies": ["product"]
+        },
+        {
+          "name": "Stability Studies",
+          "slug": "stability-studies",
+          "description": "Stability study protocols, observations, and results.",
+          "entities": [{ "name": "StabilityStudy", "profile": "research" }]
+        },
+        {
+          "name": "Computational Chemistry",
+          "slug": "computational-chemistry",
+          "description": "Computational chemistry runs and research result summaries; optional product capability.",
+          "entities": [{ "name": "ChemistrySimulation", "profile": "research" }],
+          "maturity": "optional"
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "slug": "product",
+      "ownership": "Commercial product identity, released product versions, official specifications, and product lifecycle.",
+      "publicEvents": [
+        "ProductCreated",
+        "ProductVersionReleased",
+        "ProductSpecificationChanged",
+        "ProductLifecycleStatusChanged",
+        "ProductDiscontinued"
+      ],
+      "studios": [
+        {
+          "name": "Product Catalog",
+          "slug": "product-catalog",
+          "description": "Commercial product catalog and product identity.",
+          "entities": [{ "name": "CommercialProduct", "profile": "product" }]
+        },
+        {
+          "name": "Product Specifications",
+          "slug": "product-specifications",
+          "description": "Official product specifications and grades.",
+          "entities": [{ "name": "ProductSpecification", "profile": "product" }]
+        },
+        {
+          "name": "Product Lifecycle",
+          "slug": "product-lifecycle",
+          "description": "Commercial lifecycle decisions for a product.",
+          "entities": [{ "name": "ProductLifecycleRecord", "profile": "product" }]
+        },
+        {
+          "name": "Product Change",
+          "slug": "product-change",
+          "description": "Versioned changes to commercial product identity and specifications.",
+          "entities": [{ "name": "ProductChange", "profile": "product" }],
+          "dependencies": ["quality", "compliance"]
+        },
+        {
+          "name": "Product Portfolio",
+          "slug": "product-portfolio",
+          "description": "Product portfolio groupings and planning references.",
+          "entities": [{ "name": "ProductPortfolio", "profile": "product" }]
+        }
+      ]
+    },
+    {
+      "name": "Quality",
+      "slug": "quality",
+      "ownership": "Quality controls and criteria, nonconformance, CAPA, audit findings, release/rejection decisions, and recalls.",
+      "publicEvents": [
+        "QualityInspectionRequested",
+        "QualityInspectionPassed",
+        "QualityInspectionFailed",
+        "BatchReleaseAuthorized",
+        "BatchReleaseRejected",
+        "NonconformanceOpened",
+        "CAPACompleted",
+        "ProductRecallInitiated"
+      ],
+      "studios": [
+        {
+          "name": "Quality Control",
+          "slug": "quality-control",
+          "description": "Quality inspections and documented quality decisions.",
+          "entities": [{ "name": "QualityInspection", "profile": "quality" }],
+          "dependencies": ["laboratory"]
+        },
+        {
+          "name": "Quality Assurance",
+          "slug": "quality-assurance",
+          "description": "Quality assurance records, approvals, and evidence references.",
+          "entities": [{ "name": "QualityAssuranceRecord", "profile": "quality" }]
+        },
+        {
+          "name": "Quality Specifications",
+          "slug": "quality-specifications",
+          "description": "Quality acceptance specifications; official product identity remains owned by Product.",
+          "entities": [{ "name": "QualitySpecification", "profile": "quality" }],
+          "dependencies": ["product"]
+        },
+        {
+          "name": "Nonconformance & CAPA",
+          "slug": "nonconformance-capa",
+          "description": "Nonconformance records, corrective actions, and effectiveness evidence.",
+          "entities": [{ "name": "Nonconformance", "profile": "quality" }]
+        },
+        {
+          "name": "Quality Audit",
+          "slug": "quality-audit",
+          "description": "Quality audit plans, findings, and closure evidence.",
+          "entities": [{ "name": "QualityAudit", "profile": "quality" }]
+        },
+        {
+          "name": "Complaints & Recalls",
+          "slug": "complaints-recalls",
+          "description": "Quality complaints, recall initiation, and product impact references.",
+          "entities": [{ "name": "ProductRecall", "profile": "quality" }],
+          "dependencies": ["sales-distribution", "product", "inventory"]
+        }
+      ]
+    },
+    {
+      "name": "Laboratory",
+      "slug": "laboratory",
+      "ownership": "Samples, test execution, laboratory methods, measurement results, equipment, facilities, reagents, and consumables.",
+      "publicEvents": [
+        "SampleRegistered",
+        "SampleTestRequested",
+        "TestExecutionStarted",
+        "TestResultRecorded",
+        "TestResultVerified",
+        "LabEquipmentStatusChanged"
+      ],
+      "studios": [
+        {
+          "name": "Sample Management",
+          "slug": "sample-management",
+          "description": "Sample identity, chain-of-custody references, and sample lifecycle.",
+          "entities": [{ "name": "LabSample", "profile": "laboratory" }]
+        },
+        {
+          "name": "Test Execution",
+          "slug": "test-execution",
+          "description": "Test execution and immutable measurement result records.",
+          "entities": [
+            { "name": "LabTestExecution", "profile": "laboratory" },
+            { "name": "TestResult", "profile": "laboratory" }
+          ],
+          "dependencies": ["quality", "production", "research-development"]
+        },
+        {
+          "name": "Test Methods",
+          "slug": "test-methods",
+          "description": "Controlled laboratory test methods and revisions.",
+          "entities": [{ "name": "TestMethod", "profile": "master-data" }]
+        },
+        {
+          "name": "Lab Equipment",
+          "slug": "lab-equipment",
+          "description": "Laboratory equipment, calibration, and operational status.",
+          "entities": [{ "name": "LabEquipment", "profile": "maintenance" }],
+          "dependencies": ["maintenance-assets"]
+        },
+        {
+          "name": "Lab Facilities",
+          "slug": "lab-facilities",
+          "description": "Laboratory spaces, rooms, and facility references.",
+          "entities": [{ "name": "LabFacility", "profile": "master-data" }]
+        },
+        {
+          "name": "Reagents & Consumables",
+          "slug": "reagents-consumables",
+          "description": "Reagent and consumable inventory references; physical stock remains owned by Inventory.",
+          "entities": [{ "name": "ReagentInventory", "profile": "inventory" }],
+          "dependencies": ["inventory"]
+        }
+      ]
+    },
+    {
+      "name": "EHS",
+      "slug": "ehs",
+      "ownership": "Chemical safety, risk assessments, incidents, occupational exposure, environmental obligations, waste, and emergency readiness.",
+      "publicEvents": [
+        "SafetyIncidentReported",
+        "RiskAssessmentApproved",
+        "SafetyControlRequired",
+        "EnvironmentalLimitBreached",
+        "HazardousWasteDeclared",
+        "EmergencyPlanActivated"
+      ],
+      "studios": [
+        {
+          "name": "Chemical Safety",
+          "slug": "chemical-safety",
+          "description": "Chemical hazard, safe-handling, and safety document references.",
+          "entities": [{ "name": "ChemicalSafetyRecord", "profile": "safety" }],
+          "dependencies": ["product", "compliance"]
+        },
+        {
+          "name": "Risk Assessment",
+          "slug": "risk-assessment",
+          "description": "Hazard identification, likelihood, severity, and risk controls.",
+          "entities": [{ "name": "RiskAssessment", "profile": "safety" }]
+        },
+        {
+          "name": "Incident Management",
+          "slug": "incident-management",
+          "description": "Safety incidents, investigations, and corrective actions.",
+          "entities": [{ "name": "SafetyIncident", "profile": "safety" }]
+        },
+        {
+          "name": "Industrial Hygiene",
+          "slug": "industrial-hygiene",
+          "description": "Occupational exposure observations and hygiene assessments.",
+          "entities": [{ "name": "ExposureAssessment", "profile": "safety" }],
+          "dependencies": ["human-resources"]
+        },
+        {
+          "name": "Environmental Management",
+          "slug": "environmental-management",
+          "description": "Environmental monitoring and limit observations.",
+          "entities": [{ "name": "EnvironmentalMonitoring", "profile": "safety" }]
+        },
+        {
+          "name": "Waste Management",
+          "slug": "waste-management",
+          "description": "Waste classification, handling, and hazardous-waste declarations.",
+          "entities": [{ "name": "WasteManifest", "profile": "safety" }],
+          "dependencies": ["compliance", "logistics"]
+        },
+        {
+          "name": "Emergency Preparedness",
+          "slug": "emergency-preparedness",
+          "description": "Emergency plans, readiness reviews, and response references.",
+          "entities": [{ "name": "EmergencyPlan", "profile": "safety" }]
+        }
+      ]
+    },
+    {
+      "name": "Maintenance & Assets",
+      "slug": "maintenance-assets",
+      "ownership": "Physical assets, maintenance plans, work orders, breakdowns, spare-parts requirements, facilities, utilities, and energy records.",
+      "publicEvents": [
+        "MaintenanceWorkOrderCreated",
+        "MaintenanceWorkStarted",
+        "MaintenanceWorkCompleted",
+        "AssetAvailabilityChanged",
+        "AssetFailureReported"
+      ],
+      "studios": [
+        {
+          "name": "Asset Registry",
+          "slug": "asset-registry",
+          "description": "Physical asset registry and lifecycle references.",
+          "entities": [{ "name": "Asset", "profile": "maintenance" }]
+        },
+        {
+          "name": "Preventive Maintenance",
+          "slug": "preventive-maintenance",
+          "description": "Preventive maintenance plans and due dates.",
+          "entities": [{ "name": "MaintenancePlan", "profile": "maintenance" }]
+        },
+        {
+          "name": "Work Orders",
+          "slug": "work-orders",
+          "description": "Maintenance work requests, priorities, and execution windows.",
+          "entities": [{ "name": "MaintenanceWorkOrder", "profile": "maintenance" }]
+        },
+        {
+          "name": "Breakdown Management",
+          "slug": "breakdown-management",
+          "description": "Asset failures, breakdown investigations, and restoration records.",
+          "entities": [{ "name": "EquipmentBreakdown", "profile": "maintenance" }]
+        },
+        {
+          "name": "Spare Parts",
+          "slug": "spare-parts",
+          "description": "Spare-part requirements and references; Inventory owns physical quantities.",
+          "entities": [{ "name": "SparePartRequirement", "profile": "inventory" }],
+          "dependencies": ["inventory"]
+        },
+        {
+          "name": "Facilities & Utilities",
+          "slug": "facilities-utilities",
+          "description": "Facility utility assets and service records.",
+          "entities": [{ "name": "FacilityUtilityRecord", "profile": "maintenance" }]
+        },
+        {
+          "name": "Energy Management",
+          "slug": "energy-management",
+          "description": "Energy usage and performance records.",
+          "entities": [{ "name": "EnergyRecord", "profile": "maintenance" }]
+        }
+      ]
+    },
+    {
+      "name": "Logistics",
+      "slug": "logistics",
+      "ownership": "Transport plans, carriers, shipments, tracking, delivery, freight costs, and dangerous-goods transport operations.",
+      "publicEvents": [
+        "ShipmentCreated",
+        "ShipmentDispatched",
+        "ShipmentStatusChanged",
+        "ShipmentDelivered",
+        "ShipmentDeliveryFailed",
+        "FreightCostRecorded"
+      ],
+      "studios": [
+        {
+          "name": "Transport Planning",
+          "slug": "transport-planning",
+          "description": "Transport plans, routes, and schedule windows.",
+          "entities": [{ "name": "TransportPlan", "profile": "logistics" }]
+        },
+        {
+          "name": "Fleet & Carrier",
+          "slug": "fleet-carrier",
+          "description": "Carrier and fleet reference data.",
+          "entities": [{ "name": "Carrier", "profile": "master-data" }]
+        },
+        {
+          "name": "Shipment Management",
+          "slug": "shipment-management",
+          "description": "Shipment planning and dispatch; sales orders remain owned by Sales.",
+          "entities": [{ "name": "Shipment", "profile": "logistics" }],
+          "dependencies": ["sales-distribution", "inventory"]
+        },
+        {
+          "name": "Dangerous Goods",
+          "slug": "dangerous-goods",
+          "description": "Dangerous-goods declarations and transport handling references.",
+          "entities": [{ "name": "DangerousGoodsDeclaration", "profile": "safety" }],
+          "dependencies": ["ehs", "compliance"]
+        },
+        {
+          "name": "Shipment Tracking",
+          "slug": "shipment-tracking",
+          "description": "Shipment status events and proof-of-delivery references.",
+          "entities": [{ "name": "ShipmentTrackingEvent", "profile": "logistics" }]
+        },
+        {
+          "name": "Freight Cost",
+          "slug": "freight-cost",
+          "description": "Freight cost records; formal financial posting remains owned by Finance.",
+          "entities": [{ "name": "FreightCost", "profile": "finance" }],
+          "dependencies": ["finance"]
+        }
+      ]
+    },
+    {
+      "name": "Sales & Distribution",
+      "slug": "sales-distribution",
+      "ownership": "Commercial customers, quotations, sales orders, sales pricing, distribution network, and customer service.",
+      "publicEvents": [
+        "SalesOrderConfirmed",
+        "SalesOrderCancelled",
+        "SalesOrderChanged",
+        "CustomerDeliveryRequested",
+        "SalesReturnRequested"
+      ],
+      "studios": [
+        {
+          "name": "Customer Management",
+          "slug": "customer-management",
+          "description": "Commercial customer identity and account references.",
+          "entities": [{ "name": "Customer", "profile": "master-data" }]
+        },
+        {
+          "name": "Sales & Quotations",
+          "slug": "sales-quotations",
+          "description": "Customer quotations, commercial terms, and validity windows.",
+          "entities": [{ "name": "SalesQuotation", "profile": "sales" }]
+        },
+        {
+          "name": "Sales Orders",
+          "slug": "sales-orders",
+          "description": "Confirmed customer orders; inventory reservation, shipment, and invoicing remain owned by their Labs.",
+          "entities": [
+            { "name": "SalesOrder", "profile": "sales" },
+            { "name": "SalesOrderLine", "profile": "sales" }
+          ],
+          "dependencies": ["product", "inventory", "quality", "logistics", "finance"]
+        },
+        {
+          "name": "Pricing",
+          "slug": "pricing",
+          "description": "Versioned sales price lists and commercial pricing records.",
+          "entities": [{ "name": "PriceList", "profile": "sales" }]
+        },
+        {
+          "name": "Distribution Network",
+          "slug": "distribution-network",
+          "description": "Distribution channels and commercial network references.",
+          "entities": [{ "name": "DistributionNode", "profile": "master-data" }]
+        },
+        {
+          "name": "Customer Service",
+          "slug": "customer-service",
+          "description": "Customer service cases, response tracking, and resolution notes.",
+          "entities": [{ "name": "CustomerServiceCase", "profile": "sales" }]
+        }
+      ]
+    },
+    {
+      "name": "Finance",
+      "slug": "finance",
+      "ownership": "Accounting ledger, receivables, payables, formal financial documents, cost, budget, cash flow, and profitability.",
+      "publicEvents": [
+        "SupplierInvoiceRecorded",
+        "CustomerInvoiceIssued",
+        "PaymentReceived",
+        "PaymentExecuted",
+        "CostEntryPosted",
+        "BudgetApproved",
+        "FinancialPeriodClosed"
+      ],
+      "studios": [
+        {
+          "name": "Accounting",
+          "slug": "accounting",
+          "description": "Accounting accounts and financial journal records.",
+          "entities": [{ "name": "LedgerAccount", "profile": "master-data" }]
+        },
+        {
+          "name": "Accounts Payable & Receivable",
+          "slug": "accounts-payable-receivable",
+          "description": "Formal supplier/customer invoices and payment references.",
+          "entities": [{ "name": "FinancialDocument", "profile": "finance" }]
+        },
+        {
+          "name": "Cost Management",
+          "slug": "cost-management",
+          "description": "Posted cost entries and cost attribution references.",
+          "entities": [{ "name": "CostRecord", "profile": "finance" }]
+        },
+        {
+          "name": "Budget Management",
+          "slug": "budget-management",
+          "description": "Budget scenarios, financial periods, and approved budget records.",
+          "entities": [{ "name": "BudgetPlan", "profile": "finance" }]
+        },
+        {
+          "name": "Cash Flow",
+          "slug": "cash-flow",
+          "description": "Cash flow projections and recorded treasury events.",
+          "entities": [{ "name": "CashFlowRecord", "profile": "finance" }]
+        },
+        {
+          "name": "Profitability Analysis",
+          "slug": "profitability-analysis",
+          "description": "Profitability analyses for products, customers, and orders.",
+          "entities": [{ "name": "ProfitabilityAnalysis", "profile": "finance" }]
+        }
+      ]
+    },
+    {
+      "name": "Human Resources",
+      "slug": "human-resources",
+      "ownership": "Employees, workforce plans, shifts, training, competency, and workforce performance.",
+      "publicEvents": [
+        "EmployeeWorkforceStatusChanged",
+        "ShiftSchedulePublished",
+        "CompetencyGranted",
+        "TrainingCompleted",
+        "RequiredQualificationExpired"
+      ],
+      "studios": [
+        {
+          "name": "Workforce Management",
+          "slug": "workforce-management",
+          "description": "Employee workforce records; platform Identity remains the owner of login accounts.",
+          "entities": [{ "name": "Employee", "profile": "workforce" }]
+        },
+        {
+          "name": "Shift Management",
+          "slug": "shift-management",
+          "description": "Shift schedules and workforce assignment windows.",
+          "entities": [{ "name": "ShiftSchedule", "profile": "workforce" }]
+        },
+        {
+          "name": "Training & Competency",
+          "slug": "training-competency",
+          "description": "Training completion and competency evidence.",
+          "entities": [{ "name": "TrainingRecord", "profile": "workforce" }]
+        },
+        {
+          "name": "Workforce Planning",
+          "slug": "workforce-planning",
+          "description": "Planned staffing capacity by period and scenario.",
+          "entities": [{ "name": "WorkforcePlan", "profile": "planning" }]
+        },
+        {
+          "name": "Performance Management",
+          "slug": "performance-management",
+          "description": "Workforce performance review records and evaluation periods.",
+          "entities": [{ "name": "PerformanceReview", "profile": "workforce" }]
+        }
+      ]
+    },
+    {
+      "name": "Compliance",
+      "slug": "compliance",
+      "ownership": "Regulatory requirements, standards, certifications, permits, controlled documents, and compliance audits.",
+      "publicEvents": [
+        "RegulatoryRequirementChanged",
+        "ComplianceAssessmentCompleted",
+        "PermitStatusChanged",
+        "ControlledDocumentReleased",
+        "ComplianceViolationDetected"
+      ],
+      "studios": [
+        {
+          "name": "Regulatory Management",
+          "slug": "regulatory-management",
+          "description": "Regulatory source references, applicability, and review status.",
+          "entities": [{ "name": "RegulatoryRequirement", "profile": "compliance" }]
+        },
+        {
+          "name": "Standards & Certifications",
+          "slug": "standards-certifications",
+          "description": "Standards, certification scope, and evidence references.",
+          "entities": [{ "name": "CertificationRecord", "profile": "compliance" }]
+        },
+        {
+          "name": "Permits & Licenses",
+          "slug": "permits-licenses",
+          "description": "Operational permits, licensed scope, and validity periods.",
+          "entities": [{ "name": "OperatingPermit", "profile": "compliance" }]
+        },
+        {
+          "name": "Document Control",
+          "slug": "document-control",
+          "description": "Controlled document revisions, review, and release references.",
+          "entities": [{ "name": "ControlledDocument", "profile": "compliance" }]
+        },
+        {
+          "name": "Compliance Audits",
+          "slug": "compliance-audits",
+          "description": "Compliance audit plans, findings, and evidence references.",
+          "entities": [{ "name": "ComplianceAudit", "profile": "compliance" }]
+        },
+        {
+          "name": "Change Control",
+          "slug": "change-control",
+          "description": "Formal change-control records and compliance impact references.",
+          "entities": [{ "name": "ChangeControlRecord", "profile": "compliance" }]
+        }
+      ]
+    }
+  ]
+}

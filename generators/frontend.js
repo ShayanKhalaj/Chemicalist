@@ -871,13 +871,23 @@ function addFrontendScaffold(plan, ctx) {
 function addFrontendPages(plan, ctx) {
   const owner = { owner: "frontend" };
 
+  // Every studio in the application gets pages, but a studio's own files must
+  // only be planned once even when its manifest appears in several contexts.
+  const plannedStudios = plan.frontendStudiosPlanned || new Set();
+  plan.frontendStudiosPlanned = plannedStudios;
+
   for (const manifest of ctx.appManifests) {
     if (manifest.ui.enabled === false) continue;
     const root =
       "src/labs/" + manifest.labSlug + "/studios/" + manifest.studioSlug;
+    const studioKey = manifest.labSlug + "/" + manifest.studioSlug;
+    if (plannedStudios.has(studioKey) && plan.files.has("frontend:" + root + "/domain/enums.business.ts")) {
+      continue;
+    }
+    plannedStudios.add(studioKey);
     const studioOwner = {
       owner: "frontend",
-      studio: manifest.labSlug + "/" + manifest.studioSlug,
+      studio: studioKey,
     };
     plan.add(root + "/domain/enums.business.ts", generateStudioEnums(ctx, manifest), studioOwner);
 

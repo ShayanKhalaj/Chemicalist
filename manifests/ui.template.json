@@ -1,22 +1,22 @@
 {
   "colors": {
-    "background": "#f6f7f9",
+    "background": "#f4f7f9",
     "surface": "#ffffff",
-    "surfaceMuted": "#f1f5f9",
-    "border": "#e2e8f0",
-    "text": "#0f172a",
-    "textMuted": "#64748b",
+    "surfaceMuted": "#eaf0f3",
+    "border": "#d7e1e6",
+    "text": "#172b36",
+    "textMuted": "#607680",
     "primary": "#0f766e",
     "primaryHover": "#115e59",
-    "danger": "#b91c1c",
-    "dangerBackground": "#fef2f2",
-    "success": "#15803d",
-    "successBackground": "#f0fdf4",
-    "warning": "#b45309",
-    "warningBackground": "#fffbeb"
+    "danger": "#b42318",
+    "dangerBackground": "#fef3f2",
+    "success": "#067647",
+    "successBackground": "#ecfdf3",
+    "warning": "#b54708",
+    "warningBackground": "#fffaeb"
   },
   "typography": {
-    "fontFamily": "system-ui, -apple-system, Segoe UI, sans-serif",
+    "fontFamily": "system-ui, Segoe UI, sans-serif",
     "baseFontSize": "15px"
   },
   "radius": "10px"

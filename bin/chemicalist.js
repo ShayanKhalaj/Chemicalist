@@ -23,9 +23,7 @@ const { stdin, stdout } = require("node:process");
 const pkg = require("../package.json");
 const {
   ManifestError,
-  loadAndValidateManifest,
-  validateManifest,
-  loadManifestFile,
+  loadAndValidateManifests,
 } = require("../engine/manifest");
 const {
   readRegistryFile,
@@ -152,15 +150,16 @@ function commandValidate(options, io) {
 
   for (const manifestPath of options.manifests) {
     try {
-      const { absolutePath, json } = loadManifestFile(manifestPath);
-      const manifest = validateManifest(json, { filePath: absolutePath });
-      report.push({
-        manifest: absolutePath,
-        valid: true,
-        lab: manifest.lab,
-        studio: manifest.studio,
-        models: manifest.models.map((model) => model.name),
-      });
+      const manifests = loadAndValidateManifests(path.resolve(manifestPath));
+      for (const manifest of manifests) {
+        report.push({
+          manifest: manifest.filePath,
+          valid: true,
+          lab: manifest.lab,
+          studio: manifest.studio,
+          models: manifest.models.map((model) => model.name),
+        });
+      }
     } catch (error) {
       failed = true;
       if (error instanceof ManifestError) {
@@ -248,8 +247,8 @@ function runGenerate(options, io, modeWhich = {}) {
 
   // Validate everything before touching the filesystem: a broken manifest must
   // never leave a half-generated application behind.
-  const manifests = options.manifests.map((manifestPath) =>
-    loadAndValidateManifest(path.resolve(manifestPath), undefined, {
+  const manifests = options.manifests.flatMap((manifestPath) =>
+    loadAndValidateManifests(path.resolve(manifestPath), undefined, {
       overrides: options.overrides,
     }),
   );
@@ -533,8 +532,8 @@ function progress(io, current, total, label) {
 }
 
 async function configureInit(options, io) {
-  const manifests = options.manifests.map((manifestPath) =>
-    loadAndValidateManifest(path.resolve(manifestPath)),
+  const manifests = options.manifests.flatMap((manifestPath) =>
+    loadAndValidateManifests(path.resolve(manifestPath)),
   );
   const base = manifests[0];
   const interactive = stdin.isTTY && stdout.isTTY && !options.yes;
@@ -735,6 +734,8 @@ function writeStudioManifests(outRoot, registry) {
       studio: descriptor.studio,
       manifestPath: descriptor.manifestPath,
       models: descriptor.models,
+      catalogKey: descriptor.catalogKey,
+      catalogMetadata: descriptor.catalogMetadata,
       capabilities: descriptor.capabilities,
       generatorVersion: descriptor.generatorVersion,
     };

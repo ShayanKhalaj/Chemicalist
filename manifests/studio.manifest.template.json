@@ -1,0 +1,444 @@
+{
+  "format": "chemicalist.studio-template",
+  "version": 1,
+  "description": "Reusable domain profiles for Chemicalist Labs. Each generated model is tenant-scoped by the platform and owns only its Lab's data. Cross-Lab relationships are expressed exclusively via Reference fields. Aligned with process industry standards (ISA-95, ISA-88 concepts, batch management, quality release, hazardous goods, recipe management).",
+  "enums": [
+    {
+      "name": "StudioRecordStatus",
+      "values": [
+        "DRAFT",
+        "ACTIVE",
+        "IN_REVIEW",
+        "APPROVED",
+        "ON_HOLD",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "REJECTED",
+        "CANCELLED",
+        "ARCHIVED"
+      ]
+    }
+  ],
+  "baseFields": [
+    {
+      "name": "reference",
+      "label": "Business reference",
+      "description": "Stable, human-readable identifier owned by this Lab.",
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "index": true
+    },
+    {
+      "name": "name",
+      "label": "Name",
+      "type": "string",
+      "required": true,
+      "index": true
+    },
+    {
+      "name": "status",
+      "label": "Lifecycle status",
+      "description": "Generic record lifecycle only. Domain-specific transitions must be enforced by the owning Lab.",
+      "type": "enum",
+      "enum": "StudioRecordStatus",
+      "required": true,
+      "default": "DRAFT",
+      "index": true
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "text",
+      "required": false,
+      "nullable": true
+    }
+  ],
+  "profiles": {
+    "master-data": {
+      "description": "Reference data and controlled catalogs.",
+      "fields": [
+        { "name": "category", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "code", "label": "Short code", "description": "Stable short code used in exports and integrations.", "type": "string", "required": false, "nullable": true, "unique": true, "index": true },
+        { "name": "active", "type": "boolean", "required": true, "default": true, "index": true },
+        { "name": "ownerReference", "label": "Owner reference", "description": "Reference to the internal owner of this master-data record.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "notes", "type": "text", "required": false, "nullable": true },
+        { "name": "effectiveFrom", "type": "date", "required": false, "nullable": true, "index": true },
+        { "name": "effectiveUntil", "type": "date", "required": false, "nullable": true, "index": true },
+        { "name": "sourceSystem", "label": "Source system", "description": "System of origin when the record is synchronized from an external master.", "type": "string", "required": false, "nullable": true },
+        { "name": "uom", "label": "Base unit of measure", "type": "string", "required": false, "nullable": true }
+      ],
+      "searchFields": ["category", "code", "ownerReference"],
+      "sortFields": ["effectiveFrom", "effectiveUntil", "code"],
+      "updateFields": ["category", "code", "active", "ownerReference", "notes", "effectiveFrom", "effectiveUntil", "sourceSystem", "uom"]
+    },
+    "planning": {
+      "description": "Forecasts, plans, capacity, S&OP and campaign planning.",
+      "fields": [
+        { "name": "periodStart", "type": "date", "required": true, "index": true },
+        { "name": "periodEnd", "type": "date", "required": true, "index": true },
+        { "name": "scenario", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "plannedQuantity", "type": "decimal", "required": false, "nullable": true },
+        { "name": "committedQuantity", "label": "Committed quantity", "description": "Portion of the plan already committed to downstream Labs.", "type": "decimal", "required": false, "nullable": true },
+        { "name": "unit", "type": "string", "required": false, "nullable": true },
+        { "name": "planningLevel", "label": "Planning level", "description": "Aggregation level of this plan (site, area, line or global).", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "approvedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "approvedByReference", "label": "Approved by", "type": "string", "required": false, "nullable": true },
+        { "name": "assumptions", "type": "json", "required": false, "nullable": true },
+        { "name": "version", "label": "Plan version", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "frozen", "label": "Frozen", "description": "Whether the plan is locked for changes.", "type": "boolean", "required": false, "nullable": true },
+        { "name": "campaignReference", "label": "Campaign", "description": "Reference to a production campaign this plan belongs to.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "processMode", "label": "Process mode", "description": "Batch, continuous or hybrid.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["scenario", "planningLevel", "version", "campaignReference", "processMode"],
+      "sortFields": ["periodStart", "periodEnd", "approvedAt"],
+      "updateFields": ["periodStart", "periodEnd", "scenario", "plannedQuantity", "committedQuantity", "unit", "planningLevel", "approvedAt", "approvedByReference", "assumptions", "version", "frozen", "campaignReference", "processMode"]
+    },
+    "procurement": {
+      "description": "Supplier, sourcing, purchase and import/export records.",
+      "fields": [
+        { "name": "supplierReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "requestedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "expectedAt", "type": "date", "required": false, "nullable": true, "index": true },
+        { "name": "currency", "type": "string", "required": false, "nullable": true },
+        { "name": "totalAmount", "type": "decimal", "required": false, "nullable": true },
+        { "name": "incoterm", "label": "Incoterm", "description": "Commercial term of delivery, e.g. EXW, FOB or CIF.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "paymentTerms", "label": "Payment terms", "type": "string", "required": false, "nullable": true },
+        { "name": "approvedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "terms", "type": "json", "required": false, "nullable": true },
+        { "name": "buyerReference", "label": "Buyer", "type": "string", "required": false, "nullable": true },
+        { "name": "poStatus", "label": "Purchase order status", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "hazardousMaterial", "label": "Hazardous material", "type": "boolean", "required": false, "nullable": true }
+      ],
+      "searchFields": ["supplierReference", "incoterm", "paymentTerms", "poStatus"],
+      "sortFields": ["requestedAt", "expectedAt", "approvedAt"],
+      "updateFields": ["supplierReference", "expectedAt", "currency", "totalAmount", "incoterm", "paymentTerms", "approvedAt", "terms", "buyerReference", "poStatus", "hazardousMaterial"]
+    },
+    "inventory": {
+      "description": "Warehouse, stock, lot, storage, quality status and movement records.",
+      "fields": [
+        { "name": "itemReference", "type": "string", "required": true, "index": true },
+        { "name": "lotNumber", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "quantity", "type": "decimal", "required": true, "default": 0 },
+        { "name": "unit", "type": "string", "required": true },
+        { "name": "warehouseCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "storageLocation", "type": "string", "required": false, "nullable": true },
+        { "name": "qualityStatus", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "quantityReserved", "label": "Reserved quantity", "description": "Portion of quantity committed to reservations; the reservation itself stays owned by Inventory.", "type": "decimal", "required": false, "nullable": true },
+        { "name": "expiryDate", "label": "Expiry date", "description": "Shelf-life or retest date of the stored material.", "type": "date", "required": false, "nullable": true, "index": true },
+        { "name": "batchReference", "label": "Batch reference", "description": "Reference to the producing batch; batch ownership stays with Production.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "temperatureControlled", "label": "Temperature controlled", "type": "boolean", "required": false, "nullable": true },
+        { "name": "recordedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "stockType", "label": "Stock type", "description": "Unrestricted, quality inspection, blocked, returns, etc.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "batchCharacteristics", "label": "Batch characteristics", "description": "Key quality or specification characteristics of the lot.", "type": "json", "required": false, "nullable": true },
+        { "name": "fefoPriority", "label": "FEFO priority", "description": "First-expired-first-out ranking for allocation.", "type": "int", "required": false, "nullable": true }
+      ],
+      "searchFields": ["itemReference", "lotNumber", "warehouseCode", "batchReference", "qualityStatus", "stockType"],
+      "sortFields": ["recordedAt", "quantity", "expiryDate"],
+      "updateFields": ["warehouseCode", "storageLocation", "qualityStatus", "quantityReserved", "expiryDate", "batchReference", "temperatureControlled", "stockType", "batchCharacteristics", "fefoPriority"],
+      "operations": ["create", "read", "update"]
+    },
+    "production": {
+      "description": "Production orders, batches, recipes, execution, consumption and co-products.",
+      "fields": [
+        { "name": "productReference", "type": "string", "required": true, "index": true },
+        { "name": "productVersion", "type": "string", "required": false, "nullable": true },
+        { "name": "batchNumber", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "plannedQuantity", "type": "decimal", "required": true },
+        { "name": "actualQuantity", "type": "decimal", "required": false, "nullable": true },
+        { "name": "unit", "type": "string", "required": true },
+        { "name": "scheduledAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "startedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "completedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "processVersionReference", "type": "string", "required": false, "nullable": true },
+        { "name": "recipeReference", "label": "Master recipe", "description": "Controlled recipe/formula version used for this batch.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "yieldPercent", "label": "Yield", "description": "Actual yield of the batch compared to the plan.", "type": "decimal", "required": false, "nullable": true },
+        { "name": "consumedMaterials", "label": "Consumed materials", "description": "Execution record of material consumption; consumed stock stays owned by Inventory.", "type": "json", "required": false, "nullable": true },
+        { "name": "coProducts", "label": "Co-products and by-products", "description": "Secondary outputs produced by the batch.", "type": "json", "required": false, "nullable": true },
+        { "name": "qualityDecisionReference", "label": "Quality decision", "description": "Reference to the release decision; the decision itself stays owned by Quality.", "type": "string", "required": false, "nullable": true },
+        { "name": "startedByReference", "label": "Started by", "type": "string", "required": false, "nullable": true },
+        { "name": "equipmentReference", "label": "Primary equipment", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "orderType", "label": "Order type", "description": "Standard, rework, campaign, pilot, etc.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "campaignReference", "label": "Campaign", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "processParameters", "label": "Process parameters", "description": "Actual process values recorded during execution.", "type": "json", "required": false, "nullable": true }
+      ],
+      "searchFields": ["productReference", "batchNumber", "orderType", "recipeReference", "campaignReference"],
+      "sortFields": ["scheduledAt", "startedAt", "completedAt"],
+      "updateFields": ["productVersion", "plannedQuantity", "unit", "scheduledAt", "processVersionReference", "recipeReference", "startedByReference", "equipmentReference", "orderType", "actualQuantity", "yieldPercent", "consumedMaterials", "coProducts", "qualityDecisionReference", "completedAt", "campaignReference", "processParameters"]
+    },
+    "engineering": {
+      "description": "Process models, recipes, engineering changes and scale-up records.",
+      "fields": [
+        { "name": "revision", "type": "string", "required": true, "index": true },
+        { "name": "processType", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "effectiveFrom", "type": "datetime", "required": false, "nullable": true },
+        { "name": "parameters", "type": "json", "required": false, "nullable": true },
+        { "name": "changeReason", "type": "text", "required": false, "nullable": true },
+        { "name": "scale", "type": "decimal", "required": false, "nullable": true },
+        { "name": "scaleUnit", "type": "string", "required": false, "nullable": true },
+        { "name": "approvedByReference", "label": "Approved by", "type": "string", "required": false, "nullable": true },
+        { "name": "supersedesRevision", "label": "Supersedes revision", "description": "Revision replaced by this engineering change.", "type": "string", "required": false, "nullable": true },
+        { "name": "validationStatus", "label": "Validation status", "description": "Generic review lifecycle; domain approval must be enforced by the owning Lab.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "changeType", "label": "Change type", "description": "Minor, major, emergency, temporary.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "recipeDefinition", "label": "Recipe definition", "description": "Structured formula, phases, bill of materials and process steps.", "type": "json", "required": false, "nullable": true },
+        { "name": "equipmentClass", "label": "Equipment class", "description": "ISA-88 style equipment class or hierarchy reference.", "type": "string", "required": false, "nullable": true }
+      ],
+      "searchFields": ["revision", "processType", "validationStatus", "changeType"],
+      "sortFields": ["effectiveFrom"],
+      "updateFields": ["processType", "approvedByReference", "supersedesRevision", "validationStatus", "changeReason", "scale", "scaleUnit", "parameters", "changeType", "recipeDefinition", "equipmentClass"]
+    },
+    "research": {
+      "description": "Research projects, formulations, experiments and development.",
+      "fields": [
+        { "name": "projectReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "objective", "type": "text", "required": false, "nullable": true },
+        { "name": "hypothesis", "type": "text", "required": false, "nullable": true },
+        { "name": "experimentCount", "type": "int", "required": true, "default": 0 },
+        { "name": "startedAt", "type": "date", "required": false, "nullable": true },
+        { "name": "completedAt", "type": "date", "required": false, "nullable": true },
+        { "name": "resultSummary", "type": "text", "required": false, "nullable": true },
+        { "name": "protocolReference", "label": "Protocol reference", "description": "Controlled protocol or SOP the experiment follows.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "labSampleReference", "label": "Lab sample", "description": "Reference to the sample; sample identity stays owned by Laboratory.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "leadResearcherReference", "label": "Lead researcher", "type": "string", "required": false, "nullable": true },
+        { "name": "experimentData", "type": "json", "required": false, "nullable": true },
+        { "name": "trl", "label": "Technology readiness level", "type": "int", "required": false, "nullable": true },
+        { "name": "formulationVersion", "label": "Formulation version", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["projectReference", "protocolReference", "labSampleReference", "formulationVersion"],
+      "sortFields": ["startedAt", "completedAt"],
+      "updateFields": ["objective", "hypothesis", "resultSummary", "protocolReference", "labSampleReference", "leadResearcherReference", "experimentData", "experimentCount", "trl", "formulationVersion"]
+    },
+    "product": {
+      "description": "Commercial product identity, specifications and lifecycle.",
+      "fields": [
+        { "name": "productCode", "type": "string", "required": true, "unique": true, "index": true },
+        { "name": "grade", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "revision", "type": "string", "required": false, "nullable": true },
+        { "name": "lifecycleStatus", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "effectiveFrom", "type": "date", "required": false, "nullable": true },
+        { "name": "safetyDataSheetReference", "type": "string", "required": false, "nullable": true },
+        { "name": "specifications", "type": "json", "required": false, "nullable": true },
+        { "name": "formulaVersionReference", "label": "Formula version", "description": "Reference to the research formulation; the formulation itself stays owned by R&D.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "hazardClass", "label": "Hazard class", "description": "GHS hazard classification of the product.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "shelfLifeMonths", "label": "Shelf life (months)", "type": "int", "required": false, "nullable": true },
+        { "name": "storageConditions", "label": "Storage conditions", "type": "text", "required": false, "nullable": true },
+        { "name": "releasedAt", "label": "Released at", "description": "Timestamp the version was commercially released.", "type": "datetime", "required": false, "nullable": true },
+        { "name": "casNumber", "label": "CAS number", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "ghsClassification", "label": "GHS classification", "description": "Full GHS hazard statements and pictograms.", "type": "json", "required": false, "nullable": true }
+      ],
+      "searchFields": ["productCode", "grade", "hazardClass", "formulaVersionReference", "casNumber"],
+      "sortFields": ["effectiveFrom", "releasedAt"],
+      "updateFields": ["grade", "revision", "lifecycleStatus", "effectiveFrom", "safetyDataSheetReference", "specifications", "formulaVersionReference", "hazardClass", "shelfLifeMonths", "storageConditions", "releasedAt", "casNumber", "ghsClassification"]
+    },
+    "quality": {
+      "description": "Quality inspections, assurance, CAPA, release decisions and certificates.",
+      "fields": [
+        { "name": "subjectType", "type": "string", "required": true, "index": true },
+        { "name": "subjectReference", "type": "string", "required": true, "index": true },
+        { "name": "inspectionType", "type": "string", "required": false, "nullable": true },
+        { "name": "decision", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "inspectedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "dueAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "findings", "type": "text", "required": false, "nullable": true },
+        { "name": "evidenceReference", "type": "string", "required": false, "nullable": true },
+        { "name": "batchReference", "label": "Batch reference", "description": "Reference to the inspected batch; batch identity stays owned by Production.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "specificationVersion", "label": "Specification version", "type": "string", "required": false, "nullable": true },
+        { "name": "releasedByReference", "label": "Released by", "description": "Authorized person who signed the release or rejection decision.", "type": "string", "required": false, "nullable": true },
+        { "name": "decisionAt", "label": "Decision at", "type": "datetime", "required": false, "nullable": true },
+        { "name": "measurements", "label": "Measurements", "description": "Measured values against acceptance criteria; measurement raw data stays owned by Laboratory.", "type": "json", "required": false, "nullable": true },
+        { "name": "capaReference", "label": "CAPA reference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "coaReference", "label": "Certificate of Analysis", "description": "Reference to the issued CoA document.", "type": "string", "required": false, "nullable": true },
+        { "name": "usageDecision", "label": "Usage decision", "description": "Accepted, rejected, reprocess, etc.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["subjectReference", "inspectionType", "decision", "batchReference", "capaReference", "usageDecision"],
+      "sortFields": ["inspectedAt", "dueAt", "decisionAt"],
+      "updateFields": ["inspectionType", "dueAt", "findings", "evidenceReference", "specificationVersion", "releasedByReference", "decisionAt", "measurements", "decision", "capaReference", "coaReference", "usageDecision"]
+    },
+    "laboratory": {
+      "description": "Samples, test execution, methods, results and lab equipment.",
+      "fields": [
+        { "name": "sampleCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "sampleType", "type": "string", "required": false, "nullable": true },
+        { "name": "methodReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "resultValue", "type": "decimal", "required": false, "nullable": true },
+        { "name": "resultUnit", "type": "string", "required": false, "nullable": true },
+        { "name": "testedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "equipmentReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "measurementData", "type": "json", "required": false, "nullable": true },
+        { "name": "batchReference", "label": "Batch reference", "description": "Reference to the related batch; batch identity stays owned by Production.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "methodVersion", "label": "Method version", "description": "Controlled revision of the test method used.", "type": "string", "required": false, "nullable": true },
+        { "name": "verifiedByReference", "label": "Verified by", "type": "string", "required": false, "nullable": true },
+        { "name": "verifiedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "calibrationDueAt", "label": "Calibration due", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "acceptanceCriteria", "label": "Acceptance criteria", "type": "text", "required": false, "nullable": true },
+        { "name": "specificationResult", "label": "Specification result", "description": "Pass, fail or out-of-spec against the product specification.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["sampleCode", "methodReference", "equipmentReference", "batchReference", "specificationResult"],
+      "sortFields": ["testedAt", "calibrationDueAt"],
+      "updateFields": ["sampleType", "methodReference", "resultValue", "resultUnit", "equipmentReference", "measurementData", "methodVersion", "verifiedByReference", "verifiedAt", "calibrationDueAt", "acceptanceCriteria", "specificationResult"],
+      "operations": ["create", "read", "update"]
+    },
+    "safety": {
+      "description": "Chemical safety, incidents, risk, environment, emissions and waste.",
+      "fields": [
+        { "name": "hazardClass", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "severity", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "likelihood", "type": "int", "required": false, "nullable": true },
+        { "name": "occurredAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "reportedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "locationReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "correctiveAction", "type": "text", "required": false, "nullable": true },
+        { "name": "exposureValue", "type": "decimal", "required": false, "nullable": true },
+        { "name": "exposureUnit", "label": "Exposure unit", "description": "Unit of the exposure measurement, e.g. ppm or mg/m3.", "type": "string", "required": false, "nullable": true },
+        { "name": "wasteClass", "label": "Waste class", "description": "Classification of declared waste; disposal stays owned by the responsible Lab.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "regulatoryReference", "label": "Regulatory reference", "description": "Reference to the applicable requirement; the requirement stays owned by Compliance.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "mitigation", "label": "Mitigation", "description": "Documented risk reduction measures.", "type": "text", "required": false, "nullable": true },
+        { "name": "incidentType", "label": "Incident type", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "emissionValue", "label": "Emission value", "description": "Measured emission quantity.", "type": "decimal", "required": false, "nullable": true },
+        { "name": "emissionUnit", "label": "Emission unit", "type": "string", "required": false, "nullable": true }
+      ],
+      "searchFields": ["hazardClass", "severity", "locationReference", "wasteClass", "regulatoryReference", "incidentType"],
+      "sortFields": ["occurredAt", "reportedAt"],
+      "updateFields": ["severity", "likelihood", "correctiveAction", "exposureValue", "exposureUnit", "wasteClass", "regulatoryReference", "mitigation", "incidentType", "emissionValue", "emissionUnit"]
+    },
+    "maintenance": {
+      "description": "Assets, preventive maintenance, work orders and utilities.",
+      "fields": [
+        { "name": "assetReference", "type": "string", "required": true, "index": true },
+        { "name": "workType", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "priority", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "scheduledAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "completedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "downtimeMinutes", "type": "int", "required": false, "nullable": true },
+        { "name": "nextDueAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "workDetails", "type": "text", "required": false, "nullable": true },
+        { "name": "criticality", "label": "Asset criticality", "description": "Operational criticality of the asset (e.g. A, B, C class).", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "costCenterReference", "label": "Cost center", "description": "Reference used by Finance for maintenance cost allocation.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "requestedByReference", "label": "Requested by", "type": "string", "required": false, "nullable": true },
+        { "name": "usedSpareParts", "label": "Used spare parts", "description": "Consumed spare-part references; physical stock stays owned by Inventory.", "type": "json", "required": false, "nullable": true },
+        { "name": "failureMode", "label": "Failure mode", "type": "string", "required": false, "nullable": true },
+        { "name": "equipmentClass", "label": "Equipment class", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["assetReference", "workType", "priority", "criticality", "costCenterReference", "equipmentClass"],
+      "sortFields": ["scheduledAt", "completedAt", "nextDueAt"],
+      "updateFields": ["workType", "priority", "scheduledAt", "nextDueAt", "workDetails", "criticality", "costCenterReference", "requestedByReference", "usedSpareParts", "completedAt", "downtimeMinutes", "failureMode", "equipmentClass"]
+    },
+    "logistics": {
+      "description": "Transport plans, carriers, shipments and freight records.",
+      "fields": [
+        { "name": "shipmentReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "origin", "type": "string", "required": false, "nullable": true },
+        { "name": "destination", "type": "string", "required": false, "nullable": true },
+        { "name": "carrierReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "dispatchedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "deliveredAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "freightCost", "type": "decimal", "required": false, "nullable": true },
+        { "name": "currency", "type": "string", "required": false, "nullable": true },
+        { "name": "hazardousGoods", "type": "boolean", "required": true, "default": false },
+        { "name": "dangerousGoodsClass", "label": "Dangerous goods class", "description": "UN/ADR class when hazardousGoods is true.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "trackingReference", "label": "Tracking reference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "temperatureRange", "label": "Temperature range", "description": "Required transport temperature range, e.g. 2-8C.", "type": "string", "required": false, "nullable": true },
+        { "name": "costCenterReference", "label": "Cost center", "description": "Reference used by Finance for freight cost allocation.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "proofOfDeliveryReference", "label": "Proof of delivery", "type": "string", "required": false, "nullable": true },
+        { "name": "incoterm", "label": "Incoterm", "type": "string", "required": false, "nullable": true },
+        { "name": "unNumber", "label": "UN number", "description": "UN number for dangerous goods.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["shipmentReference", "carrierReference", "origin", "destination", "dangerousGoodsClass", "trackingReference", "unNumber"],
+      "sortFields": ["dispatchedAt", "deliveredAt"],
+      "updateFields": ["origin", "destination", "carrierReference", "freightCost", "currency", "dangerousGoodsClass", "trackingReference", "temperatureRange", "costCenterReference", "proofOfDeliveryReference", "incoterm", "deliveredAt", "unNumber"]
+    },
+    "sales": {
+      "description": "Customers, quotations, sales orders, pricing and distribution.",
+      "fields": [
+        { "name": "customerReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "orderReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "currency", "type": "string", "required": false, "nullable": true },
+        { "name": "totalAmount", "type": "decimal", "required": false, "nullable": true },
+        { "name": "requestedDeliveryAt", "type": "date", "required": false, "nullable": true },
+        { "name": "promisedDeliveryAt", "type": "date", "required": false, "nullable": true },
+        { "name": "billingReference", "type": "string", "required": false, "nullable": true },
+        { "name": "channelReference", "label": "Distribution channel", "description": "Distribution channel the order flows through.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "qualityReleaseReference", "label": "Quality release", "description": "Reference to the batch release decision; the decision stays owned by Quality.", "type": "string", "required": false, "nullable": true },
+        { "name": "creditStatus", "label": "Credit status", "description": "Credit-check outcome; formal accounting stays owned by Finance.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "confirmedAt", "label": "Confirmed at", "type": "datetime", "required": false, "nullable": true },
+        { "name": "lineItems", "label": "Line items", "description": "Snapshot of order lines; inventory reservation stays owned by Inventory.", "type": "json", "required": false, "nullable": true },
+        { "name": "incoterm", "label": "Incoterm", "type": "string", "required": false, "nullable": true },
+        { "name": "coaRequired", "label": "CoA required", "type": "boolean", "required": false, "nullable": true }
+      ],
+      "searchFields": ["customerReference", "orderReference", "channelReference", "creditStatus"],
+      "sortFields": ["requestedDeliveryAt", "promisedDeliveryAt", "confirmedAt"],
+      "updateFields": ["customerReference", "currency", "totalAmount", "requestedDeliveryAt", "promisedDeliveryAt", "channelReference", "qualityReleaseReference", "creditStatus", "confirmedAt", "lineItems", "incoterm", "coaRequired"]
+    },
+    "finance": {
+      "description": "Accounting, invoices, payments, costs, budgets and cash flow.",
+      "fields": [
+        { "name": "documentNumber", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "accountCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "amount", "type": "decimal", "required": true },
+        { "name": "currency", "type": "string", "required": true },
+        { "name": "periodStart", "type": "date", "required": false, "nullable": true },
+        { "name": "periodEnd", "type": "date", "required": false, "nullable": true },
+        { "name": "postedAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "counterpartyReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "postingStatus", "label": "Posting status", "description": "Draft, posted or reversed; domain posting rules must be enforced by Finance.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "purchaseOrderReference", "label": "Purchase order", "description": "Reference to the originating purchase order; the order stays owned by Supply Chain.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "salesOrderReference", "label": "Sales order", "description": "Reference to the originating sales order; the order stays owned by Sales.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "fiscalPeriod", "label": "Fiscal period", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "reversedAt", "label": "Reversed at", "type": "datetime", "required": false, "nullable": true },
+        { "name": "allocation", "label": "Allocation", "description": "Cost or revenue allocation details, e.g. per product or batch.", "type": "json", "required": false, "nullable": true },
+        { "name": "costCenterReference", "label": "Cost center", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "batchCostReference", "label": "Batch cost reference", "description": "Reference to production batch for product costing.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["documentNumber", "accountCode", "counterpartyReference", "fiscalPeriod", "purchaseOrderReference", "salesOrderReference", "costCenterReference", "batchCostReference"],
+      "sortFields": ["periodStart", "periodEnd", "postedAt"],
+      "updateFields": ["accountCode", "periodStart", "periodEnd", "postingStatus", "fiscalPeriod", "reversedAt", "allocation", "costCenterReference", "batchCostReference"],
+      "operations": ["create", "read", "update"]
+    },
+    "workforce": {
+      "description": "Employees, shifts, training, competency and performance.",
+      "fields": [
+        { "name": "employeeReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "roleTitle", "type": "string", "required": false, "nullable": true },
+        { "name": "shiftCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "startsAt", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "endsAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "competencyCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "trainingCompletedAt", "label": "Training completed", "type": "datetime", "required": false, "nullable": true },
+        { "name": "score", "type": "decimal", "required": false, "nullable": true },
+        { "name": "departmentReference", "label": "Department", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "qualificationExpiresAt", "label": "Qualification expiry", "description": "When a required qualification lapses; HR owns the competency record.", "type": "datetime", "required": false, "nullable": true, "index": true },
+        { "name": "trainingProvider", "label": "Training provider", "type": "string", "required": false, "nullable": true },
+        { "name": "skillMatrix", "label": "Skill matrix", "description": "Skill-to-role mapping used by Production and Maintenance staffing.", "type": "json", "required": false, "nullable": true },
+        { "name": "certificationReference", "label": "Certification", "type": "string", "required": false, "nullable": true }
+      ],
+      "searchFields": ["employeeReference", "roleTitle", "shiftCode", "competencyCode", "departmentReference"],
+      "sortFields": ["startsAt", "endsAt", "trainingCompletedAt", "qualificationExpiresAt"],
+      "updateFields": ["roleTitle", "shiftCode", "startsAt", "endsAt", "competencyCode", "score", "departmentReference", "qualificationExpiresAt", "trainingProvider", "skillMatrix", "certificationReference"]
+    },
+    "compliance": {
+      "description": "Regulations, standards, permits, controlled documents and audits.",
+      "fields": [
+        { "name": "requirementCode", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "jurisdiction", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "authority", "type": "string", "required": false, "nullable": true },
+        { "name": "effectiveFrom", "type": "date", "required": false, "nullable": true },
+        { "name": "effectiveUntil", "type": "date", "required": false, "nullable": true },
+        { "name": "sourceDocumentReference", "type": "string", "required": false, "nullable": true },
+        { "name": "reviewedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "reviewStatus", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "evidenceReference", "type": "string", "required": false, "nullable": true },
+        { "name": "documentType", "label": "Document type", "description": "Regulation, directive, standard, permit or certificate.", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "documentNumber", "label": "Official document number", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "issuedAt", "label": "Issued at", "type": "date", "required": false, "nullable": true },
+        { "name": "renewalDueAt", "label": "Renewal due", "description": "When the permit or certificate must be renewed.", "type": "date", "required": false, "nullable": true, "index": true },
+        { "name": "labScope", "label": "Applicable Labs", "description": "Labs and processes this requirement applies to; ownership stays with the owning Lab.", "type": "json", "required": false, "nullable": true },
+        { "name": "auditFindings", "label": "Audit findings", "description": "Structured findings from a compliance audit.", "type": "json", "required": false, "nullable": true },
+        { "name": "complianceStatus", "label": "Compliance status", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "reachStatus", "label": "REACH status", "description": "Registration, evaluation or authorization status where applicable.", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["requirementCode", "jurisdiction", "authority", "reviewStatus", "documentType", "documentNumber", "complianceStatus", "reachStatus"],
+      "sortFields": ["effectiveFrom", "effectiveUntil", "reviewedAt", "renewalDueAt"],
+      "updateFields": ["jurisdiction", "authority", "effectiveFrom", "effectiveUntil", "sourceDocumentReference", "reviewStatus", "evidenceReference", "documentType", "documentNumber", "issuedAt", "renewalDueAt", "labScope", "auditFindings", "complianceStatus", "reachStatus"]
+    }
+  }
+}

@@ -11,9 +11,9 @@ const { OutputPlan, plan: classifyOutput } = require("../engine/writer");
 const { plan } = require("../engine");
 const { patchBlock } = require("../engine/patch");
 
-function exampleManifest() {
-  const file = path.join(__dirname, "..", "manifests", "example.manifest.json");
-  return loadAndValidateManifest(file);
+function catalogStudioManifest(catalogKey = "product/product-catalog") {
+  const file = path.join(__dirname, "..", "manifests", "chemicalist.manifest.json");
+  return loadAndValidateManifest(file, undefined, { catalogKey });
 }
 
 function generatedFiles(manifest) {
@@ -24,12 +24,12 @@ function generatedFiles(manifest) {
 }
 
 test("manifest DTOs and custom methods generate repository and query contracts", () => {
-  const manifest = exampleManifest();
+  const manifest = catalogStudioManifest();
   const { context, files, output } = generatedFiles(manifest);
   const classified = classifyOutput(output.root, output).results;
   const markedContent = (scope, relativePath) =>
     classified.find((entry) => entry.scope === scope && entry.path === relativePath).content;
-  const product = context.studio.models.find((model) => model.name === "Product");
+  const product = context.studio.models[0];
   const content = (relativePath) => {
     const file = files.get("backend:" + relativePath);
     assert.ok(file, "expected generated file " + relativePath);
@@ -48,13 +48,23 @@ test("manifest DTOs and custom methods generate repository and query contracts",
   assert.match(markedContent("frontend", "src/app/styles.css"), /^\/\* @generated/);
   assert.match(markedContent("frontend", "public/robots.txt"), /^User-agent:/);
   assert.deepEqual(product.dtoFields.create, [
+    "reference",
     "name",
-    "sku",
-    "quantity",
-    "price",
-    "status",
-    "isActive",
     "description",
+    "productCode",
+    "grade",
+    "revision",
+    "lifecycleStatus",
+    "effectiveFrom",
+    "safetyDataSheetReference",
+    "specifications",
+    "formulaVersionReference",
+    "hazardClass",
+    "shelfLifeMonths",
+    "storageConditions",
+    "releasedAt",
+    "casNumber",
+    "ghsClassification",
   ]);
   assert.match(schema, /filterMode: z\.enum\(\['and', 'or'\]\)/);
   assert.match(schema, /\.max\(8\)\.default\(\[\{ field: 'createdAt', direction: 'desc' \}\]\)/);
@@ -66,14 +76,9 @@ test("manifest DTOs and custom methods generate repository and query contracts",
   assert.match(repository, /async getOneById\(/);
   assert.match(repository, /async search\(/);
   assert.match(repository, /async checkDuplicate\(/);
-  assert.match(repository, /async findOneBySku\(sku: string\)/);
-  assert.match(repository, /async findManyByStatus\(status: string\)/);
-  assert.match(repository, /async countByStatus\(status: string\)/);
-  assert.match(repository, /status: status as PrismaProductStatus/);
-  assert.match(repository, /async isExistedBySku\(sku: string\)/);
-  assert.match(repositoryContract, /findOneBySku\(sku: string\)/);
-  assert.match(persistenceModel, /ProductStatus as PrismaProductStatus/);
-  assert.match(prismaSchema, /enum ProductStatus \{\s+DRAFT\s+ACTIVE\s+ARCHIVED/);
+  assert.match(repository, /async findOneByReference\(reference: string\)/);
+  assert.match(repositoryContract, /findOneByReference\(reference: string\)/);
+  assert.match(repository, /async isExistedByReference\(reference: string\)/);
 
   const audit = content("src/platform/audit/audit.interceptor.ts");
   assert.match(audit, /await this\.audit\.record/);
@@ -92,30 +97,51 @@ test("manifest DTOs and custom methods generate repository and query contracts",
 });
 
 test("manifest rejects invalid DTO fields and unsafe custom repository methods", () => {
-  const source = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "..", "manifests", "example.manifest.json"), "utf8"),
-  );
-  source.models[0].dtos.create = ["id"];
+  const manifest = catalogStudioManifest();
+  const entityFields = manifest.models[0].fields
+    .filter((field) => !["id", "createdAt", "updatedAt"].includes(field.name))
+    .map((field) => ({
+    name: field.name,
+    type: field.baseType === "uuid" ? "uuid" : field.baseType,
+    ...(field.enumName ? { enum: field.enumName } : {}),
+    ...(field.required ? {} : { required: false }),
+    ...(field.nullable ? { nullable: true } : {}),
+  }));
 
   assert.throws(
-    () => validateManifest(source),
+    () =>
+      validateManifest({
+        lab: "Product",
+        studio: "Catalog",
+        enums: manifest.enums.map((item) => ({ name: item.name, values: item.values })),
+        models: [{ name: "CatalogItem", fields: entityFields, dtos: { create: ["doesNotExist"] } }],
+      }),
     (error) =>
       error instanceof ManifestError &&
-      error.issues.some((issue) => issue.includes("unknown field `id`")),
+      error.issues.some((issue) => issue.includes("unknown field `doesNotExist`")),
+    "expected unknown-field validation error",
   );
 
-  source.models[0].dtos.create = ["name"];
-  source.models[0].customMethods.push({
-    name: "createOne",
-    operation: "findOneBy",
-    fields: ["sku"],
-  });
-
   assert.throws(
-    () => validateManifest(source),
+    () =>
+      validateManifest({
+        lab: "Product",
+        studio: "Catalog",
+        enums: manifest.enums.map((item) => ({ name: item.name, values: item.values })),
+        models: [
+          {
+            name: "CatalogItem",
+            fields: entityFields,
+            customMethods: [
+              { name: "createOne", operation: "findOneBy", fields: ["productCode"] },
+            ],
+          },
+        ],
+      }),
     (error) =>
       error instanceof ManifestError &&
       error.issues.some((issue) => issue.includes("reserved repository method")),
+    "expected reserved-method validation error",
   );
 });
 
@@ -137,7 +163,7 @@ test("patching a later generated block replaces it instead of appending duplicat
 });
 
 test("platform identity, auth, RBAC, audit, tenancy, and location are tenant-scoped", () => {
-  const { files } = generatedFiles(exampleManifest());
+  const { files } = generatedFiles(catalogStudioManifest());
   const backend = (relativePath) => {
     const result = files.get("backend:" + relativePath);
     assert.ok(result, "expected generated file " + relativePath);
@@ -199,17 +225,21 @@ test("platform identity, auth, RBAC, audit, tenancy, and location are tenant-sco
 });
 
 test("MongoDB manifest output uses ObjectId and the UI template overrides theme tokens", () => {
-  const file = path.join(__dirname, "..", "manifests", "example.manifest.json");
-  const manifest = loadAndValidateManifest(file, undefined, {
-    overrides: { persistence: { database: "mongodb" } },
-    uiTemplate: {
-      colors: { primary: "#123456" },
-      typography: { baseFontSize: "16px" },
-      radius: "12px",
+  const manifest = loadAndValidateManifest(
+    path.join(__dirname, "..", "manifests", "chemicalist.manifest.json"),
+    undefined,
+    {
+      catalogKey: "product/product-catalog",
+      overrides: { persistence: { database: "mongodb" } },
+      uiTemplate: {
+        colors: { primary: "#123456" },
+        typography: { baseFontSize: "16px" },
+        radius: "12px",
+      },
     },
-  });
+  );
   const { context, files } = generatedFiles(manifest);
-  const product = context.studio.models.find((model) => model.name === "Product");
+  const product = context.studio.models[0];
   const schema = files.get("backend:prisma/schema.prisma").content;
   const styles = files.get("frontend:src/app/styles.css").content;
   const compose = files.get("backend:docker-compose.yml").content;
@@ -232,3 +262,4 @@ test("MongoDB manifest output uses ObjectId and the UI template overrides theme 
   assert.match(styles, /--radius: 12px/);
   assert.match(styles, /font-size: 16px/);
 });
+

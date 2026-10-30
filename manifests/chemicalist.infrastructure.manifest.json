@@ -5,14 +5,14 @@
     "schema": "public"
   },
   "capabilities": {
-    "unitOfWork": true,
+    "cache": true,
+    "messaging": true,
     "outbox": true,
     "inbox": true,
     "saga": true,
-    "cache": true,
-    "messaging": true
+    "tenantScope": true
   },
   "services": {
-    "elasticsearch": false
+    "elasticsearch": true
   }
 }

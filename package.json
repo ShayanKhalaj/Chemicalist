@@ -20,6 +20,9 @@
     "test": "node --test",
     "validate:example": "node bin/chemicalist.js validate manifests/example.manifest.json",
     "generate:example": "node bin/chemicalist.js generate manifests/example.manifest.json --out ../chemicalist.backend",
+    "validate:catalog": "node bin/chemicalist.js validate manifests/chemicalist.manifest.json",
+    "generate:catalog": "node bin/chemicalist.js generate manifests/chemicalist.manifest.json --out ../chemicalist.backend",
+    "bootstrap:catalog": "node bin/chemicalist.js init manifests/chemicalist.manifest.json",
     "bootstrap": "node bin/chemicalist.js init manifests/example.manifest.json",
     "link:global": "npm link"
   },

@@ -116,6 +116,7 @@ function buildContext(current, previousStudios = {}, options = {}) {
     if (!descriptor || !descriptor.manifestPath) continue;
     provenances.push(
       loadAndValidateManifest(descriptor.manifestPath, undefined, {
+        catalogKey: descriptor.catalogKey,
         configPath: descriptor.configPath,
         infrastructurePath: descriptor.infrastructurePath,
         frontendPath: descriptor.frontendPath,
@@ -473,6 +474,8 @@ function describeStudioForRegistry(manifest, context) {
     infrastructurePath: manifest.projectFiles.infrastructurePath,
     frontendPath: manifest.projectFiles.frontendPath,
     uiTemplatePath: manifest.projectFiles.uiTemplatePath,
+    catalogKey: manifest.catalogKey,
+    catalogMetadata: manifest.catalogMetadata,
     generatorVersion: context
       ? context.generatorVersion
       : DEFAULT_REGISTRY.generatorVersion,

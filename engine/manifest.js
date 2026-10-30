@@ -6,10 +6,11 @@ const path = require("node:path");
 const { pascal, kebab, camel } = require("./naming");
 const { normalizeModel } = require("./field-types");
 const { ACCEPTED_CAPABILITY_NAMES } = require("./capabilities");
+const { expandCatalog, CATALOG_FORMAT } = require("./catalog");
 
 const APP_NAME_PATTERN = /^[a-z][a-z0-9-]{1,62}$/;
-const LAB_PATTERN = /^[A-Za-z][A-Za-z0-9 _-]*$/;
-const STUDIO_PATTERN = /^[A-Za-z][A-Za-z0-9 _-]*$/;
+const LAB_PATTERN = /^[A-Za-z][A-Za-z0-9 &_-]*$/;
+const STUDIO_PATTERN = /^[A-Za-z][A-Za-z0-9 &_-]*$/;
 const MODEL_PATTERN = /^[A-Z][A-Za-z0-9]*$/;
 const ENUM_PATTERN = /^[A-Z][A-Za-z0-9]*$/;
 const CUSTOM_REPOSITORY_OPERATIONS = new Set([
@@ -120,17 +121,26 @@ function projectFilesForManifest(manifestPath, options = {}) {
     (fs.existsSync(path.join(path.dirname(absolutePath), "ui.template.json"))
       ? path.join(path.dirname(absolutePath), "ui.template.json")
       : undefined);
+  const studioTemplatePath =
+    options.studioTemplatePath ||
+    (fs.existsSync(
+      path.join(path.dirname(absolutePath), "studio.manifest.template.json"),
+    )
+      ? path.join(path.dirname(absolutePath), "studio.manifest.template.json")
+      : undefined);
   return {
     paths: {
       configPath,
       infrastructurePath,
       frontendPath,
       uiTemplatePath,
+      studioTemplatePath,
     },
     config: readOptional(configPath),
     infrastructure: readOptional(infrastructurePath),
     frontendManifest: readOptional(frontendPath),
     uiTemplate: readOptional(uiTemplatePath),
+    studioTemplate: readOptional(studioTemplatePath),
   };
 }
 
@@ -338,16 +348,28 @@ function validateManifest(json, options = {}) {
 
   const lab = json.lab;
   const studio = json.studio;
+  const labSlug = json.labSlug === undefined ? kebab(lab) : json.labSlug;
+  const studioSlug =
+    json.studioSlug === undefined ? kebab(studio) : json.studioSlug;
 
   if (typeof lab !== "string" || !LAB_PATTERN.test(lab)) {
     issues.push(
-      'lab: must be a non-empty identifier (letters, digits, space, "-", "_")',
+      'lab: must be a non-empty identifier (letters, digits, space, "&", "-", "_")',
     );
   }
   if (typeof studio !== "string" || !STUDIO_PATTERN.test(studio)) {
     issues.push(
-      'studio: must be a non-empty identifier (letters, digits, space, "-", "_")',
+      'studio: must be a non-empty identifier (letters, digits, space, "&", "-", "_")',
     );
+  }
+  if (typeof labSlug !== "string" || !/^[a-z][a-z0-9-]*$/.test(labSlug)) {
+    issues.push("labSlug: must be lowercase kebab-case");
+  }
+  if (
+    typeof studioSlug !== "string" ||
+    !/^[a-z][a-z0-9-]*$/.test(studioSlug)
+  ) {
+    issues.push("studioSlug: must be lowercase kebab-case");
   }
 
   // ---- application metadata ------------------------------------------------
@@ -924,9 +946,9 @@ function validateManifest(json, options = {}) {
       api,
     },
     lab,
-    labSlug: kebab(lab),
+    labSlug,
     studio,
-    studioSlug: kebab(studio),
+    studioSlug,
     description: typeof json.description === "string" ? json.description : "",
     persistence: { provider, database, schema: database === "postgres" ? schema : undefined },
     services,
@@ -945,11 +967,11 @@ function validateManifest(json, options = {}) {
   return normalized;
 }
 
-function loadAndValidateManifest(manifestPath, cwd, options = {}) {
+function loadAndValidateManifests(manifestPath, cwd, options = {}) {
   const { absolutePath, json } = loadManifestFile(manifestPath, cwd);
   const files = projectFilesForManifest(absolutePath, options);
   const merge = (base, override) => ({ ...(base || {}), ...(override || {}) });
-  return validateManifest(json, {
+  const validationOptions = {
     filePath: absolutePath,
     config: merge(files.config, options.config),
     infrastructure: merge(files.infrastructure, options.infrastructure),
@@ -957,7 +979,50 @@ function loadAndValidateManifest(manifestPath, cwd, options = {}) {
     uiTemplate: options.uiTemplate || files.uiTemplate,
     overrides: options.overrides,
     projectFiles: files.paths,
+  };
+  if (json.format !== CATALOG_FORMAT) {
+    return [validateManifest(json, validationOptions)];
+  }
+
+  let entries;
+  try {
+    entries = expandCatalog(json, files.studioTemplate, absolutePath);
+  } catch (error) {
+    if (Array.isArray(error.issues)) {
+      throw new ManifestError(absolutePath, error.issues);
+    }
+    throw error;
+  }
+  const normalized = entries.map((entry) => {
+    const manifest = validateManifest(entry, validationOptions);
+    manifest.catalogKey = manifest.labSlug + "/" + manifest.studioSlug;
+    manifest.catalogMetadata = entry.studioMetadata;
+    return manifest;
   });
+  if (options.catalogKey) {
+    const selected = normalized.find(
+      (manifest) => manifest.catalogKey === options.catalogKey,
+    );
+    if (!selected) {
+      throw new ManifestError(absolutePath, [
+        "catalogKey: no Studio matches `" + options.catalogKey + "`",
+      ]);
+    }
+    return [selected];
+  }
+  return normalized;
+}
+
+function loadAndValidateManifest(manifestPath, cwd, options = {}) {
+  const manifests = loadAndValidateManifests(manifestPath, cwd, options);
+  if (manifests.length !== 1) {
+    throw new ManifestError(manifests[0].filePath, [
+      "this catalog expands to " +
+        manifests.length +
+        " Studios; use loadAndValidateManifests or select a catalogKey",
+    ]);
+  }
+  return manifests[0];
 }
 
 module.exports = {
@@ -965,5 +1030,6 @@ module.exports = {
   loadManifestFile,
   loadProjectInputs,
   loadAndValidateManifest,
+  loadAndValidateManifests,
   validateManifest,
 };

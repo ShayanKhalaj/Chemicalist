@@ -33,24 +33,33 @@ function plan(ctx, outputPlan, options = {}) {
     throw new Error("Unknown frontend plan mode: " + frontendMode);
   }
 
+  // When several manifests share one application, the app-wide project files,
+  // platform layer and Prisma schema are identical for every studio: they are
+  // generated once, on the first studio, and only that studio's own code and
+  // UI pages are added per manifest.
+  const isFirstStudioForApp = !outputPlan.appFilesPlanned;
+  outputPlan.appFilesPlanned = true;
+
   if (!ctx.outputs.api) {
     notes.push("API output disabled by the project configuration");
   } else {
+  if (isFirstStudioForApp) {
   shared.addProjectFiles(outputPlan, ctx);
   shared.addSharedKernel(outputPlan, ctx);
   shared.addDatabase(outputPlan, ctx);
   shared.addPlatform(outputPlan, ctx);
   shared.addTransportCapabilities(outputPlan, ctx);
   shared.addBootstrap(outputPlan, ctx);
+  }
 
   addStudioFiles(outputPlan, ctx);
-  patchAppOwnedFiles(outputPlan, ctx);
+  if (isFirstStudioForApp) patchAppOwnedFiles(outputPlan, ctx);
   }
 
   if (!ctx.appUi.enabled || !ctx.outputs.frontend) {
     notes.push("frontend skipped: ui.enabled is false in the manifest");
   } else if (frontendMode === "bootstrap") {
-    frontend.addFrontendScaffold(outputPlan.forFrontend(), ctx);
+    if (isFirstStudioForApp) frontend.addFrontendScaffold(outputPlan.forFrontend(), ctx);
     frontend.addFrontendPages(outputPlan.forFrontend(), ctx);
   } else if (frontendMode === "studios") {
     // The backend is always generated before the UI: a studio's screens are

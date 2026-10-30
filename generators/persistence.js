@@ -59,16 +59,20 @@ function prismaFieldLine(field, database) {
   if (field.baseType === "uuid") {
     attributes.push(database === "mongodb" ? "@db.ObjectId" : "@db.Uuid");
   }
+
   if (field.baseType === "decimal") {
     attributes.push(database === "mongodb" ? "@db.Decimal128" : "@db.Decimal(18, 4)");
   }
-  if (field.baseType === "text" && database !== "mongodb") attributes.push("@db.Text");
-  if (field.unique) attributes.push("@unique");
-  else if (field.index && !field.generatedByRelation) attributes.push("@index");
+
+  if (field.baseType === "text" && database !== "mongodb") {
+    attributes.push("@db.Text");
+  }
+
+  if (field.unique) {
+    attributes.push("@unique");
+  }
 
   if (field.optional && !field.nullable && !field.isArray && field.default === undefined) {
-    // Optional (may be omitted) but not nullable: give the column a default so
-    // `NOT NULL` and "can be omitted" stay consistent.
     switch (field.baseType) {
       case "string":
       case "text":
@@ -95,6 +99,7 @@ function prismaFieldLine(field, database) {
 
   if (field.default !== undefined && !field.isArray) {
     const existing = attributes.some((attribute) => attribute.startsWith("@default"));
+
     if (!existing) {
       if (typeof field.default === "string") {
         attributes.push(
