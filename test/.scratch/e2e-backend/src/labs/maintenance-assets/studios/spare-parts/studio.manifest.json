@@ -1,0 +1,15 @@
+{
+  "lab": "Maintenance & Assets",
+  "studio": "Spare Parts",
+  "description": "Spare-part requirements and references; Inventory owns physical quantities.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "MaintenanceAssetsSparePartRequirement"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

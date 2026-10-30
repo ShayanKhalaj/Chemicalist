@@ -1,0 +1,15 @@
+{
+  "lab": "Quality",
+  "studio": "Nonconformance & CAPA",
+  "description": "Nonconformance records, corrective actions, and effectiveness evidence.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "QualityNonconformance"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

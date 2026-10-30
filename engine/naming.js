@@ -52,6 +52,14 @@ function snake(value) {
   return splitWords(value).map((word) => word.toLowerCase()).join('_');
 }
 
+/**
+ * `supply-chain` -> `supply_chain` (PostgreSQL schema name of a Lab).
+ * Every Lab owns exactly one schema; Studio slugs never take part in it.
+ */
+function schemaName(value) {
+  return snake(value).replace(/[^a-z0-9_]/g, '_');
+}
+
 function pluralize(value) {
   const word = String(value);
   if (/[^aeiou]y$/i.test(word)) return word.slice(0, -1) + 'ies';
@@ -88,6 +96,7 @@ module.exports = {
   kebab,
   constant,
   snake,
+  schemaName,
   pluralize,
   kebabPlural,
   camelPlural,

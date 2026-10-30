@@ -1,0 +1,30 @@
+{
+  "lab": "Compliance",
+  "studio": "Permits & Licenses",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ComplianceOperatingPermit"
+  ],
+  "catalogKey": "compliance/permits-licenses",
+  "catalogMetadata": {
+    "ownership": "Regulatory requirements, standards, certifications, permits, controlled documents, and compliance audits.",
+    "publicEvents": [
+      "RegulatoryRequirementChanged",
+      "ComplianceAssessmentCompleted",
+      "PermitStatusChanged",
+      "ControlledDocumentReleased",
+      "ComplianceViolationDetected"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

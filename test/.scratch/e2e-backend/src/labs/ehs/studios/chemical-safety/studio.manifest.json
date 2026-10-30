@@ -1,0 +1,15 @@
+{
+  "lab": "EHS",
+  "studio": "Chemical Safety",
+  "description": "Chemical hazard, safe-handling, and safety document references.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "EhsChemicalSafetyRecord"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

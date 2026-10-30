@@ -1,0 +1,853 @@
+﻿Prisma schema loaded from test\.scratch\prismacheck\schema.prisma
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:11[0m
+[1;94m   | [0m
+[1;94m10 | [0m  url      = env("DATABASE_URL")
+[1;94m11 | [0m  [1;91mschemas  = [[0m
+[1;94m12 | [0m    "public",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:12[0m
+[1;94m   | [0m
+[1;94m11 | [0m  schemas  = [
+[1;94m12 | [0m    [1;91m"public",[0m
+[1;94m13 | [0m    "compliance",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:13[0m
+[1;94m   | [0m
+[1;94m12 | [0m    "public",
+[1;94m13 | [0m    [1;91m"compliance",[0m
+[1;94m14 | [0m    "ehs",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:14[0m
+[1;94m   | [0m
+[1;94m13 | [0m    "compliance",
+[1;94m14 | [0m    [1;91m"ehs",[0m
+[1;94m15 | [0m    "finance",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:15[0m
+[1;94m   | [0m
+[1;94m14 | [0m    "ehs",
+[1;94m15 | [0m    [1;91m"finance",[0m
+[1;94m16 | [0m    "human_resources",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:16[0m
+[1;94m   | [0m
+[1;94m15 | [0m    "finance",
+[1;94m16 | [0m    [1;91m"human_resources",[0m
+[1;94m17 | [0m    "inventory",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:17[0m
+[1;94m   | [0m
+[1;94m16 | [0m    "human_resources",
+[1;94m17 | [0m    [1;91m"inventory",[0m
+[1;94m18 | [0m    "laboratory",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:18[0m
+[1;94m   | [0m
+[1;94m17 | [0m    "inventory",
+[1;94m18 | [0m    [1;91m"laboratory",[0m
+[1;94m19 | [0m    "logistics",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:19[0m
+[1;94m   | [0m
+[1;94m18 | [0m    "laboratory",
+[1;94m19 | [0m    [1;91m"logistics",[0m
+[1;94m20 | [0m    "maintenance_assets",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:20[0m
+[1;94m   | [0m
+[1;94m19 | [0m    "logistics",
+[1;94m20 | [0m    [1;91m"maintenance_assets",[0m
+[1;94m21 | [0m    "planning",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:21[0m
+[1;94m   | [0m
+[1;94m20 | [0m    "maintenance_assets",
+[1;94m21 | [0m    [1;91m"planning",[0m
+[1;94m22 | [0m    "process_engineering",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:22[0m
+[1;94m   | [0m
+[1;94m21 | [0m    "planning",
+[1;94m22 | [0m    [1;91m"process_engineering",[0m
+[1;94m23 | [0m    "product",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:23[0m
+[1;94m   | [0m
+[1;94m22 | [0m    "process_engineering",
+[1;94m23 | [0m    [1;91m"product",[0m
+[1;94m24 | [0m    "production",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:24[0m
+[1;94m   | [0m
+[1;94m23 | [0m    "product",
+[1;94m24 | [0m    [1;91m"production",[0m
+[1;94m25 | [0m    "quality",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:25[0m
+[1;94m   | [0m
+[1;94m24 | [0m    "production",
+[1;94m25 | [0m    [1;91m"quality",[0m
+[1;94m26 | [0m    "research_development",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:26[0m
+[1;94m   | [0m
+[1;94m25 | [0m    "quality",
+[1;94m26 | [0m    [1;91m"research_development",[0m
+[1;94m27 | [0m    "sales_distribution",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:27[0m
+[1;94m   | [0m
+[1;94m26 | [0m    "research_development",
+[1;94m27 | [0m    [1;91m"sales_distribution",[0m
+[1;94m28 | [0m    "supply_chain",
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:28[0m
+[1;94m   | [0m
+[1;94m27 | [0m    "sales_distribution",
+[1;94m28 | [0m    [1;91m"supply_chain",[0m
+[1;94m29 | [0m  ]
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is not a valid definition within a datasource.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:29[0m
+[1;94m   | [0m
+[1;94m28 | [0m    "supply_chain",
+[1;94m29 | [0m  [1;91m][0m
+[1;94m30 | [0m}
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `PlanningStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:246[0m
+[1;94m   | [0m
+[1;94m245 | [0m  name String
+[1;94m246 | [0m  status PlanningStudioRecordStatus [1;91m@default(PlanningStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `PlanningStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:284[0m
+[1;94m   | [0m
+[1;94m283 | [0m  name String
+[1;94m284 | [0m  status PlanningStudioRecordStatus [1;91m@default(PlanningStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `PlanningStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:322[0m
+[1;94m   | [0m
+[1;94m321 | [0m  name String
+[1;94m322 | [0m  status PlanningStudioRecordStatus [1;91m@default(PlanningStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `PlanningStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:360[0m
+[1;94m   | [0m
+[1;94m359 | [0m  name String
+[1;94m360 | [0m  status PlanningStudioRecordStatus [1;91m@default(PlanningStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `PlanningStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:398[0m
+[1;94m   | [0m
+[1;94m397 | [0m  name String
+[1;94m398 | [0m  status PlanningStudioRecordStatus [1;91m@default(PlanningStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:436[0m
+[1;94m   | [0m
+[1;94m435 | [0m  name String
+[1;94m436 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:467[0m
+[1;94m   | [0m
+[1;94m466 | [0m  name String
+[1;94m467 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:501[0m
+[1;94m   | [0m
+[1;94m500 | [0m  name String
+[1;94m501 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:535[0m
+[1;94m   | [0m
+[1;94m534 | [0m  name String
+[1;94m535 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:569[0m
+[1;94m   | [0m
+[1;94m568 | [0m  name String
+[1;94m569 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SupplyChainStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:603[0m
+[1;94m   | [0m
+[1;94m602 | [0m  name String
+[1;94m603 | [0m  status SupplyChainStudioRecordStatus [1;91m@default(SupplyChainStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:645[0m
+[1;94m   | [0m
+[1;94m644 | [0m  name String
+[1;94m645 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:676[0m
+[1;94m   | [0m
+[1;94m675 | [0m  name String
+[1;94m676 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:716[0m
+[1;94m   | [0m
+[1;94m715 | [0m  name String
+[1;94m716 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:756[0m
+[1;94m   | [0m
+[1;94m755 | [0m  name String
+[1;94m756 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:787[0m
+[1;94m   | [0m
+[1;94m786 | [0m  name String
+[1;94m787 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:827[0m
+[1;94m   | [0m
+[1;94m826 | [0m  name String
+[1;94m827 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`InventoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:867[0m
+[1;94m   | [0m
+[1;94m866 | [0m  name String
+[1;94m867 | [0m  status InventoryStudioRecordStatus [1;91m@default(InventoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProductionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:907[0m
+[1;94m   | [0m
+[1;94m906 | [0m  name String
+[1;94m907 | [0m  status ProductionStudioRecordStatus [1;91m@default(ProductionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProductionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:951[0m
+[1;94m   | [0m
+[1;94m950 | [0m  name String
+[1;94m951 | [0m  status ProductionStudioRecordStatus [1;91m@default(ProductionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProductionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:995[0m
+[1;94m   | [0m
+[1;94m994 | [0m  name String
+[1;94m995 | [0m  status ProductionStudioRecordStatus [1;91m@default(ProductionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProductionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1039[0m
+[1;94m   | [0m
+[1;94m1038 | [0m  name String
+[1;94m1039 | [0m  status ProductionStudioRecordStatus [1;91m@default(ProductionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProductionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1083[0m
+[1;94m   | [0m
+[1;94m1082 | [0m  name String
+[1;94m1083 | [0m  status ProductionStudioRecordStatus [1;91m@default(ProductionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1127[0m
+[1;94m   | [0m
+[1;94m1126 | [0m  name String
+[1;94m1127 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1161[0m
+[1;94m   | [0m
+[1;94m1160 | [0m  name String
+[1;94m1161 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1195[0m
+[1;94m   | [0m
+[1;94m1194 | [0m  name String
+[1;94m1195 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1229[0m
+[1;94m   | [0m
+[1;94m1228 | [0m  name String
+[1;94m1229 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1263[0m
+[1;94m   | [0m
+[1;94m1262 | [0m  name String
+[1;94m1263 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ProcessEngineeringStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1297[0m
+[1;94m   | [0m
+[1;94m1296 | [0m  name String
+[1;94m1297 | [0m  status ProcessEngineeringStudioRecordStatus 
+[1;91m@default(ProcessEngineeringStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1331[0m
+[1;94m   | [0m
+[1;94m1330 | [0m  name String
+[1;94m1331 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1365[0m
+[1;94m   | [0m
+[1;94m1364 | [0m  name String
+[1;94m1365 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1399[0m
+[1;94m   | [0m
+[1;94m1398 | [0m  name String
+[1;94m1399 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1433[0m
+[1;94m   | [0m
+[1;94m1432 | [0m  name String
+[1;94m1433 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1467[0m
+[1;94m   | [0m
+[1;94m1466 | [0m  name String
+[1;94m1467 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ResearchDevelopmentStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1501[0m
+[1;94m   | [0m
+[1;94m1500 | [0m  name String
+[1;94m1501 | [0m  status ResearchDevelopmentStudioRecordStatus 
+[1;91m@default(ResearchDevelopmentStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `ProductStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1535[0m
+[1;94m   | [0m
+[1;94m1534 | [0m  name String
+[1;94m1535 | [0m  status ProductStudioRecordStatus [1;91m@default(ProductStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `ProductStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1571[0m
+[1;94m   | [0m
+[1;94m1570 | [0m  name String
+[1;94m1571 | [0m  status ProductStudioRecordStatus [1;91m@default(ProductStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `ProductStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1607[0m
+[1;94m   | [0m
+[1;94m1606 | [0m  name String
+[1;94m1607 | [0m  status ProductStudioRecordStatus [1;91m@default(ProductStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `ProductStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1643[0m
+[1;94m   | [0m
+[1;94m1642 | [0m  name String
+[1;94m1643 | [0m  status ProductStudioRecordStatus [1;91m@default(ProductStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `ProductStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1679[0m
+[1;94m   | [0m
+[1;94m1678 | [0m  name String
+[1;94m1679 | [0m  status ProductStudioRecordStatus [1;91m@default(ProductStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1715[0m
+[1;94m   | [0m
+[1;94m1714 | [0m  name String
+[1;94m1715 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1755[0m
+[1;94m   | [0m
+[1;94m1754 | [0m  name String
+[1;94m1755 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1795[0m
+[1;94m   | [0m
+[1;94m1794 | [0m  name String
+[1;94m1795 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1835[0m
+[1;94m   | [0m
+[1;94m1834 | [0m  name String
+[1;94m1835 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1875[0m
+[1;94m   | [0m
+[1;94m1874 | [0m  name String
+[1;94m1875 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `QualityStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1915[0m
+[1;94m   | [0m
+[1;94m1914 | [0m  name String
+[1;94m1915 | [0m  status QualityStudioRecordStatus [1;91m@default(QualityStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1955[0m
+[1;94m   | [0m
+[1;94m1954 | [0m  name String
+[1;94m1955 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:1994[0m
+[1;94m   | [0m
+[1;94m1993 | [0m  name String
+[1;94m1994 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2033[0m
+[1;94m   | [0m
+[1;94m2032 | [0m  name String
+[1;94m2033 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2072[0m
+[1;94m   | [0m
+[1;94m2071 | [0m  name String
+[1;94m2072 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2103[0m
+[1;94m   | [0m
+[1;94m2102 | [0m  name String
+[1;94m2103 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2141[0m
+[1;94m   | [0m
+[1;94m2140 | [0m  name String
+[1;94m2141 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LaboratoryStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2172[0m
+[1;94m   | [0m
+[1;94m2171 | [0m  name String
+[1;94m2172 | [0m  status LaboratoryStudioRecordStatus [1;91m@default(LaboratoryStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2212[0m
+[1;94m   | [0m
+[1;94m2211 | [0m  name String
+[1;94m2212 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2251[0m
+[1;94m   | [0m
+[1;94m2250 | [0m  name String
+[1;94m2251 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2290[0m
+[1;94m   | [0m
+[1;94m2289 | [0m  name String
+[1;94m2290 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2329[0m
+[1;94m   | [0m
+[1;94m2328 | [0m  name String
+[1;94m2329 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2368[0m
+[1;94m   | [0m
+[1;94m2367 | [0m  name String
+[1;94m2368 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2407[0m
+[1;94m   | [0m
+[1;94m2406 | [0m  name String
+[1;94m2407 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `EhsStudioRecordStatus.DRAFT` is 
+not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2446[0m
+[1;94m   | [0m
+[1;94m2445 | [0m  name String
+[1;94m2446 | [0m  status EhsStudioRecordStatus [1;91m@default(EhsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2485[0m
+[1;94m   | [0m
+[1;94m2484 | [0m  name String
+[1;94m2485 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2523[0m
+[1;94m   | [0m
+[1;94m2522 | [0m  name String
+[1;94m2523 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2561[0m
+[1;94m   | [0m
+[1;94m2560 | [0m  name String
+[1;94m2561 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2599[0m
+[1;94m   | [0m
+[1;94m2598 | [0m  name String
+[1;94m2599 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2637[0m
+[1;94m   | [0m
+[1;94m2636 | [0m  name String
+[1;94m2637 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2677[0m
+[1;94m   | [0m
+[1;94m2676 | [0m  name String
+[1;94m2677 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`MaintenanceAssetsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2715[0m
+[1;94m   | [0m
+[1;94m2714 | [0m  name String
+[1;94m2715 | [0m  status MaintenanceAssetsStudioRecordStatus 
+[1;91m@default(MaintenanceAssetsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2753[0m
+[1;94m   | [0m
+[1;94m2752 | [0m  name String
+[1;94m2753 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2793[0m
+[1;94m   | [0m
+[1;94m2792 | [0m  name String
+[1;94m2793 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2824[0m
+[1;94m   | [0m
+[1;94m2823 | [0m  name String
+[1;94m2824 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2864[0m
+[1;94m   | [0m
+[1;94m2863 | [0m  name String
+[1;94m2864 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2903[0m
+[1;94m   | [0m
+[1;94m2902 | [0m  name String
+[1;94m2903 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`LogisticsStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2943[0m
+[1;94m   | [0m
+[1;94m2942 | [0m  name String
+[1;94m2943 | [0m  status LogisticsStudioRecordStatus [1;91m@default(LogisticsStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:2986[0m
+[1;94m   | [0m
+[1;94m2985 | [0m  name String
+[1;94m2986 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3017[0m
+[1;94m   | [0m
+[1;94m3016 | [0m  name String
+[1;94m3017 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3052[0m
+[1;94m   | [0m
+[1;94m3051 | [0m  name String
+[1;94m3052 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3087[0m
+[1;94m   | [0m
+[1;94m3086 | [0m  name String
+[1;94m3087 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3122[0m
+[1;94m   | [0m
+[1;94m3121 | [0m  name String
+[1;94m3122 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3157[0m
+[1;94m   | [0m
+[1;94m3156 | [0m  name String
+[1;94m3157 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`SalesDistributionStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3188[0m
+[1;94m   | [0m
+[1;94m3187 | [0m  name String
+[1;94m3188 | [0m  status SalesDistributionStudioRecordStatus 
+[1;91m@default(SalesDistributionStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3223[0m
+[1;94m   | [0m
+[1;94m3222 | [0m  name String
+[1;94m3223 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3254[0m
+[1;94m   | [0m
+[1;94m3253 | [0m  name String
+[1;94m3254 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3297[0m
+[1;94m   | [0m
+[1;94m3296 | [0m  name String
+[1;94m3297 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3340[0m
+[1;94m   | [0m
+[1;94m3339 | [0m  name String
+[1;94m3340 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3383[0m
+[1;94m   | [0m
+[1;94m3382 | [0m  name String
+[1;94m3383 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value `FinanceStudioRecordStatus.DRAFT` 
+is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3426[0m
+[1;94m   | [0m
+[1;94m3425 | [0m  name String
+[1;94m3426 | [0m  status FinanceStudioRecordStatus [1;91m@default(FinanceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`HumanResourcesStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3469[0m
+[1;94m   | [0m
+[1;94m3468 | [0m  name String
+[1;94m3469 | [0m  status HumanResourcesStudioRecordStatus [1;91m@default(HumanResourcesStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`HumanResourcesStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3505[0m
+[1;94m   | [0m
+[1;94m3504 | [0m  name String
+[1;94m3505 | [0m  status HumanResourcesStudioRecordStatus [1;91m@default(HumanResourcesStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`HumanResourcesStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3541[0m
+[1;94m   | [0m
+[1;94m3540 | [0m  name String
+[1;94m3541 | [0m  status HumanResourcesStudioRecordStatus [1;91m@default(HumanResourcesStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`HumanResourcesStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3577[0m
+[1;94m   | [0m
+[1;94m3576 | [0m  name String
+[1;94m3577 | [0m  status HumanResourcesStudioRecordStatus [1;91m@default(HumanResourcesStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`HumanResourcesStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3615[0m
+[1;94m   | [0m
+[1;94m3614 | [0m  name String
+[1;94m3615 | [0m  status HumanResourcesStudioRecordStatus [1;91m@default(HumanResourcesStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3651[0m
+[1;94m   | [0m
+[1;94m3650 | [0m  name String
+[1;94m3651 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3693[0m
+[1;94m   | [0m
+[1;94m3692 | [0m  name String
+[1;94m3693 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3735[0m
+[1;94m   | [0m
+[1;94m3734 | [0m  name String
+[1;94m3735 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3777[0m
+[1;94m   | [0m
+[1;94m3776 | [0m  name String
+[1;94m3777 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3819[0m
+[1;94m   | [0m
+[1;94m3818 | [0m  name String
+[1;94m3819 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+[1;91merror[0m: [1mError parsing attribute "@default": The defined default value 
+`ComplianceStudioRecordStatus.DRAFT` is not a valid value of the enum specified for the field.[0m
+  [1;94m-->[0m  [4mtest\.scratch\prismacheck\schema.prisma:3861[0m
+[1;94m   | [0m
+[1;94m3860 | [0m  name String
+[1;94m3861 | [0m  status ComplianceStudioRecordStatus [1;91m@default(ComplianceStudioRecordStatus.DRAFT)[0m
+[1;94m   | [0m
+
+Validation Error Count: 116
+[Context: validate]
+
+Prisma CLI Version : 6.16.3

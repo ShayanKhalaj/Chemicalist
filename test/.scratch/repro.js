@@ -1,0 +1,15 @@
+const path = require("node:path");
+const root = path.join(__dirname, "..", "..");
+const { loadAndValidateManifests } = require(path.join(root, "engine/manifest"));
+const { buildContext } = require(path.join(root, "engine/context"));
+const { generatePrismaSchema } = require(path.join(root, "generators/persistence"));
+const all = loadAndValidateManifests(path.join(root, "manifests/chemicalist.manifest.json"));
+console.log("all:", all.length, "with models:", all.filter((m) => m.models.length).length);
+let schema = "";
+for (const m of all) schema = generatePrismaSchema(buildContext(m));
+const models = schema.match(/^model .*/gm) || [];
+console.log("models:", models.length, "business:", models.filter((x) => !x.includes("Chemicalist")).length);
+console.log(schema.slice(schema.indexOf("datasource"), schema.indexOf("enum ") + 30));
+console.log("schemas:", (schema.match(/^ {4}"[a-z_]+",$/gm) || []).join(" "));
+const idx = schema.indexOf("model PlanningDemandForecast");
+console.log(schema.slice(idx, schema.indexOf("\n}", idx)));

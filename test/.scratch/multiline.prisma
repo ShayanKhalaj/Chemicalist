@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "planning", "quality"]
+}
+
+enum QualityStatus {
+  DRAFT
+  ACTIVE
+  @@schema("quality")
+}
+
+model PlanningItem {
+  id     String        @id @default(uuid()) @db.Uuid
+  status QualityStatus @default(ACTIVE)
+
+  @@index([status])
+  @@map("planning_item")
+  @@schema("planning")
+}
+
+model ChemicalistThing {
+  id String @id @default(uuid()) @db.Uuid
+
+  @@schema("public")
+}

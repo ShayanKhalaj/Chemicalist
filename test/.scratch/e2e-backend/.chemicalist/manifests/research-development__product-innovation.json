@@ -1,0 +1,32 @@
+{
+  "lab": "R&D",
+  "studio": "Product Innovation",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ResearchDevelopmentDevelopmentCandidate"
+  ],
+  "catalogKey": "research-development/product-innovation",
+  "catalogMetadata": {
+    "ownership": "Research projects, experimental formulations, experiment plans, research results, and development candidates.",
+    "publicEvents": [
+      "ResearchProjectApproved",
+      "FormulationVersionCreated",
+      "ExperimentCompleted",
+      "DevelopmentCandidateProposed",
+      "StabilityStudyCompleted"
+    ],
+    "dependencies": [
+      "product"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

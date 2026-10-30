@@ -1,0 +1,15 @@
+{
+  "lab": "Product",
+  "studio": "Product Catalog",
+  "description": "Commercial product catalog and product identity.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ProductCommercialProduct"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

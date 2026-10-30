@@ -1,0 +1,15 @@
+{
+  "lab": "Maintenance & Assets",
+  "studio": "Facilities & Utilities",
+  "description": "Facility utility assets and service records.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "MaintenanceAssetsFacilityUtilityRecord"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

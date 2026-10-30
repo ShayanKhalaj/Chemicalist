@@ -1,0 +1,33 @@
+{
+  "lab": "Logistics",
+  "studio": "Freight Cost",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "LogisticsFreightCost"
+  ],
+  "catalogKey": "logistics/freight-cost",
+  "catalogMetadata": {
+    "ownership": "Transport plans, carriers, shipments, tracking, delivery, freight costs, and dangerous-goods transport operations.",
+    "publicEvents": [
+      "ShipmentCreated",
+      "ShipmentDispatched",
+      "ShipmentStatusChanged",
+      "ShipmentDelivered",
+      "ShipmentDeliveryFailed",
+      "FreightCostRecorded"
+    ],
+    "dependencies": [
+      "finance"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

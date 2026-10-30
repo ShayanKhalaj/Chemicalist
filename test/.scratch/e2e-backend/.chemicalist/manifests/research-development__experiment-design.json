@@ -1,0 +1,30 @@
+{
+  "lab": "R&D",
+  "studio": "Experiment Design",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ResearchDevelopmentExperimentDesign"
+  ],
+  "catalogKey": "research-development/experiment-design",
+  "catalogMetadata": {
+    "ownership": "Research projects, experimental formulations, experiment plans, research results, and development candidates.",
+    "publicEvents": [
+      "ResearchProjectApproved",
+      "FormulationVersionCreated",
+      "ExperimentCompleted",
+      "DevelopmentCandidateProposed",
+      "StabilityStudyCompleted"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

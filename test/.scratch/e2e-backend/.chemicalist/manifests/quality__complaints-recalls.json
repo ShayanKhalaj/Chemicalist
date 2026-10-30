@@ -1,0 +1,37 @@
+{
+  "lab": "Quality",
+  "studio": "Complaints & Recalls",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "QualityProductRecall"
+  ],
+  "catalogKey": "quality/complaints-recalls",
+  "catalogMetadata": {
+    "ownership": "Quality controls and criteria, nonconformance, CAPA, audit findings, release/rejection decisions, and recalls.",
+    "publicEvents": [
+      "QualityInspectionRequested",
+      "QualityInspectionPassed",
+      "QualityInspectionFailed",
+      "BatchReleaseAuthorized",
+      "BatchReleaseRejected",
+      "NonconformanceOpened",
+      "CAPACompleted",
+      "ProductRecallInitiated"
+    ],
+    "dependencies": [
+      "sales-distribution",
+      "product",
+      "inventory"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

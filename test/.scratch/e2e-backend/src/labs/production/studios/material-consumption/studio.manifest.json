@@ -1,0 +1,15 @@
+{
+  "lab": "Production",
+  "studio": "Material Consumption",
+  "description": "Actual consumed material records; Inventory remains the source of stock movements.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ProductionMaterialConsumption"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

@@ -1,0 +1,15 @@
+{
+  "lab": "Human Resources",
+  "studio": "Workforce Planning",
+  "description": "Planned staffing capacity by period and scenario.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "HumanResourcesWorkforcePlan"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

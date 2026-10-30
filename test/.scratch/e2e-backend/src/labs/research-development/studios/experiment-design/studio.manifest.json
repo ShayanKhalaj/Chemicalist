@@ -1,0 +1,15 @@
+{
+  "lab": "R&D",
+  "studio": "Experiment Design",
+  "description": "Experiment plans and research assumptions.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ResearchDevelopmentExperimentDesign"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

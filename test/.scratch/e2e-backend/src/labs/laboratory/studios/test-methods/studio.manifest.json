@@ -1,0 +1,15 @@
+{
+  "lab": "Laboratory",
+  "studio": "Test Methods",
+  "description": "Controlled laboratory test methods and revisions.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "LaboratoryTestMethod"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

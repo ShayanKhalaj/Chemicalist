@@ -1,0 +1,15 @@
+{
+  "lab": "Finance",
+  "studio": "Cash Flow",
+  "description": "Cash flow projections and recorded treasury events.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "FinanceCashFlowRecord"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

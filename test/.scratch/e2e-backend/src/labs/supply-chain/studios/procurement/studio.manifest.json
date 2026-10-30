@@ -1,0 +1,16 @@
+{
+  "lab": "Supply Chain",
+  "studio": "Procurement",
+  "description": "Purchase requests and purchase orders; receipt and stock remain owned by Inventory.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "SupplyChainPurchaseRequisition",
+    "SupplyChainPurchaseOrder"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

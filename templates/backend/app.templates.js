@@ -12,7 +12,9 @@
  */
 
 function manifestRegistry(ctx) {
-  const studios = ctx.studios
+  // The registry lists every studio of the application, not only the studio of
+  // the current run: app-wide files are generated once per application.
+  const studios = (ctx.registeredStudios || ctx.studios)
     .map(
       (studio) =>
         "  {\n" +
@@ -64,7 +66,7 @@ export function findStudio(labSlug: string, studioSlug: string): StudioDescripto
 }
 
 function appModule(ctx) {
-  const studioImports = ctx.studios
+  const studioImports = (ctx.registeredStudios || ctx.studios)
     .map((studio) => {
       const moduleFile =
         "./labs/" +
@@ -130,7 +132,9 @@ function appModule(ctx) {
     imports.push("SagaModule");
   }
 
-  const studioModules = ctx.studios.map((studio) => studio.moduleName);
+  const studioModules = (ctx.registeredStudios || ctx.studios).map(
+    (studio) => studio.moduleName,
+  );
 
   return `import { Module } from '@nestjs/common';
 ${platformImports.join("\n")}

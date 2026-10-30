@@ -1,0 +1,4494 @@
+// Prisma schema generated from the registered Chemicalist manifests.
+// Managed by the generator: edit manifests, then re-run `chemicalist generate`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "compliance", "ehs", "finance", "human_resources", "inventory", "laboratory", "logistics", "maintenance_assets", "planning", "process_engineering", "product", "production", "quality", "research_development", "sales_distribution", "supply_chain"]
+}
+
+enum ComplianceStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("compliance")
+}
+enum EhsStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("ehs")
+}
+enum FinanceStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("finance")
+}
+enum HumanResourcesStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("human_resources")
+}
+enum InventoryStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("inventory")
+}
+enum LaboratoryStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("laboratory")
+}
+enum LogisticsStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("logistics")
+}
+enum MaintenanceAssetsStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("maintenance_assets")
+}
+enum PlanningStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("planning")
+}
+enum ProcessEngineeringStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("process_engineering")
+}
+enum ProductStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("product")
+}
+enum ProductionStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("production")
+}
+enum QualityStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("quality")
+}
+enum ResearchDevelopmentStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("research_development")
+}
+enum SalesDistributionStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("sales_distribution")
+}
+enum SupplyChainStudioRecordStatus {
+  DRAFT
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  ON_HOLD
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+  ARCHIVED
+  @@schema("supply_chain")
+}
+
+model PlanningDemandForecast {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status PlanningStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("planning_demand_forecast")
+  @@schema("planning")
+}
+model PlanningSupplyPlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status PlanningStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("planning_supply_plan")
+  @@schema("planning")
+}
+model PlanningProductionSchedule {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status PlanningStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("planning_production_schedule")
+  @@schema("planning")
+}
+model PlanningCapacityPlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status PlanningStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("planning_capacity_plan")
+  @@schema("planning")
+}
+model PlanningSopCycle {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status PlanningStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("planning_sop_cycle")
+  @@schema("planning")
+}
+model SupplyChainSupplier {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("supply_chain_supplier")
+  @@schema("supply_chain")
+}
+model SupplyChainPurchaseRequisition {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  supplierReference String?
+  requestedAt DateTime?
+  expectedAt DateTime?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  incoterm String?
+  paymentTerms String?
+  approvedAt DateTime?
+  terms Json?
+  buyerReference String?
+  poStatus String?
+  hazardousMaterial Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([supplierReference])
+  @@index([requestedAt])
+  @@index([expectedAt])
+  @@index([incoterm])
+  @@index([poStatus])
+  @@map("supply_chain_purchase_requisition")
+  @@schema("supply_chain")
+}
+model SupplyChainPurchaseOrder {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  supplierReference String?
+  requestedAt DateTime?
+  expectedAt DateTime?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  incoterm String?
+  paymentTerms String?
+  approvedAt DateTime?
+  terms Json?
+  buyerReference String?
+  poStatus String?
+  hazardousMaterial Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([supplierReference])
+  @@index([requestedAt])
+  @@index([expectedAt])
+  @@index([incoterm])
+  @@index([poStatus])
+  @@map("supply_chain_purchase_order")
+  @@schema("supply_chain")
+}
+model SupplyChainSourcingDecision {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  supplierReference String?
+  requestedAt DateTime?
+  expectedAt DateTime?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  incoterm String?
+  paymentTerms String?
+  approvedAt DateTime?
+  terms Json?
+  buyerReference String?
+  poStatus String?
+  hazardousMaterial Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([supplierReference])
+  @@index([requestedAt])
+  @@index([expectedAt])
+  @@index([incoterm])
+  @@index([poStatus])
+  @@map("supply_chain_sourcing_decision")
+  @@schema("supply_chain")
+}
+model SupplyChainSupplierContract {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  supplierReference String?
+  requestedAt DateTime?
+  expectedAt DateTime?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  incoterm String?
+  paymentTerms String?
+  approvedAt DateTime?
+  terms Json?
+  buyerReference String?
+  poStatus String?
+  hazardousMaterial Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([supplierReference])
+  @@index([requestedAt])
+  @@index([expectedAt])
+  @@index([incoterm])
+  @@index([poStatus])
+  @@map("supply_chain_supplier_contract")
+  @@schema("supply_chain")
+}
+model SupplyChainTradeDeclaration {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SupplyChainStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("supply_chain_trade_declaration")
+  @@schema("supply_chain")
+}
+model InventoryWarehouse {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("inventory_warehouse")
+  @@schema("inventory")
+}
+model InventoryStockPosition {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("inventory_stock_position")
+  @@schema("inventory")
+}
+model InventoryMaterialLot {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("inventory_material_lot")
+  @@schema("inventory")
+}
+model InventoryStorageLocation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("inventory_storage_location")
+  @@schema("inventory")
+}
+model InventoryGoodsReceipt {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("inventory_goods_receipt")
+  @@schema("inventory")
+}
+model InventoryStockMovement {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("inventory_stock_movement")
+  @@schema("inventory")
+}
+model InventoryStockCount {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status InventoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("inventory_stock_count")
+  @@schema("inventory")
+}
+model ProductionProductionOrder {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productReference String
+  productVersion String?
+  batchNumber String?
+  plannedQuantity Decimal @db.Decimal(18, 4)
+  actualQuantity Decimal? @db.Decimal(18, 4)
+  unit String
+  scheduledAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  processVersionReference String?
+  recipeReference String?
+  yieldPercent Decimal? @db.Decimal(18, 4)
+  consumedMaterials Json?
+  coProducts Json?
+  qualityDecisionReference String?
+  startedByReference String?
+  equipmentReference String?
+  orderType String?
+  campaignReference String?
+  processParameters Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([productReference])
+  @@index([batchNumber])
+  @@index([scheduledAt])
+  @@index([recipeReference])
+  @@index([equipmentReference])
+  @@index([orderType])
+  @@index([campaignReference])
+  @@map("production_production_order")
+  @@schema("production")
+}
+model ProductionProductionBatch {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productReference String
+  productVersion String?
+  batchNumber String?
+  plannedQuantity Decimal @db.Decimal(18, 4)
+  actualQuantity Decimal? @db.Decimal(18, 4)
+  unit String
+  scheduledAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  processVersionReference String?
+  recipeReference String?
+  yieldPercent Decimal? @db.Decimal(18, 4)
+  consumedMaterials Json?
+  coProducts Json?
+  qualityDecisionReference String?
+  startedByReference String?
+  equipmentReference String?
+  orderType String?
+  campaignReference String?
+  processParameters Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([productReference])
+  @@index([batchNumber])
+  @@index([scheduledAt])
+  @@index([recipeReference])
+  @@index([equipmentReference])
+  @@index([orderType])
+  @@index([campaignReference])
+  @@map("production_production_batch")
+  @@schema("production")
+}
+model ProductionProductionExecution {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productReference String
+  productVersion String?
+  batchNumber String?
+  plannedQuantity Decimal @db.Decimal(18, 4)
+  actualQuantity Decimal? @db.Decimal(18, 4)
+  unit String
+  scheduledAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  processVersionReference String?
+  recipeReference String?
+  yieldPercent Decimal? @db.Decimal(18, 4)
+  consumedMaterials Json?
+  coProducts Json?
+  qualityDecisionReference String?
+  startedByReference String?
+  equipmentReference String?
+  orderType String?
+  campaignReference String?
+  processParameters Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([productReference])
+  @@index([batchNumber])
+  @@index([scheduledAt])
+  @@index([recipeReference])
+  @@index([equipmentReference])
+  @@index([orderType])
+  @@index([campaignReference])
+  @@map("production_production_execution")
+  @@schema("production")
+}
+model ProductionMaterialConsumption {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productReference String
+  productVersion String?
+  batchNumber String?
+  plannedQuantity Decimal @db.Decimal(18, 4)
+  actualQuantity Decimal? @db.Decimal(18, 4)
+  unit String
+  scheduledAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  processVersionReference String?
+  recipeReference String?
+  yieldPercent Decimal? @db.Decimal(18, 4)
+  consumedMaterials Json?
+  coProducts Json?
+  qualityDecisionReference String?
+  startedByReference String?
+  equipmentReference String?
+  orderType String?
+  campaignReference String?
+  processParameters Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([productReference])
+  @@index([batchNumber])
+  @@index([scheduledAt])
+  @@index([recipeReference])
+  @@index([equipmentReference])
+  @@index([orderType])
+  @@index([campaignReference])
+  @@map("production_material_consumption")
+  @@schema("production")
+}
+model ProductionProductionMetric {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productReference String
+  productVersion String?
+  batchNumber String?
+  plannedQuantity Decimal @db.Decimal(18, 4)
+  actualQuantity Decimal? @db.Decimal(18, 4)
+  unit String
+  scheduledAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  processVersionReference String?
+  recipeReference String?
+  yieldPercent Decimal? @db.Decimal(18, 4)
+  consumedMaterials Json?
+  coProducts Json?
+  qualityDecisionReference String?
+  startedByReference String?
+  equipmentReference String?
+  orderType String?
+  campaignReference String?
+  processParameters Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([productReference])
+  @@index([batchNumber])
+  @@index([scheduledAt])
+  @@index([recipeReference])
+  @@index([equipmentReference])
+  @@index([orderType])
+  @@index([campaignReference])
+  @@map("production_production_metric")
+  @@schema("production")
+}
+model ProcessEngineeringProcessDefinition {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_process_definition")
+  @@schema("process_engineering")
+}
+model ProcessEngineeringProcessModel {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_process_model")
+  @@schema("process_engineering")
+}
+model ProcessEngineeringOptimizationStudy {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_optimization_study")
+  @@schema("process_engineering")
+}
+model ProcessEngineeringEquipmentSpecification {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_equipment_specification")
+  @@schema("process_engineering")
+}
+model ProcessEngineeringEngineeringChange {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_engineering_change")
+  @@schema("process_engineering")
+}
+model ProcessEngineeringScaleUpStudy {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProcessEngineeringStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  revision String
+  processType String?
+  effectiveFrom DateTime?
+  parameters Json?
+  changeReason String? @db.Text
+  scale Decimal? @db.Decimal(18, 4)
+  scaleUnit String?
+  approvedByReference String?
+  supersedesRevision String?
+  validationStatus String?
+  changeType String?
+  recipeDefinition Json?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([revision])
+  @@index([processType])
+  @@index([validationStatus])
+  @@index([changeType])
+  @@map("process_engineering_scale_up_study")
+  @@schema("process_engineering")
+}
+model ResearchDevelopmentResearchProject {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_research_project")
+  @@schema("research_development")
+}
+model ResearchDevelopmentResearchFormulation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_research_formulation")
+  @@schema("research_development")
+}
+model ResearchDevelopmentExperimentDesign {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_experiment_design")
+  @@schema("research_development")
+}
+model ResearchDevelopmentDevelopmentCandidate {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_development_candidate")
+  @@schema("research_development")
+}
+model ResearchDevelopmentStabilityStudy {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_stability_study")
+  @@schema("research_development")
+}
+model ResearchDevelopmentChemistrySimulation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ResearchDevelopmentStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  projectReference String?
+  objective String? @db.Text
+  hypothesis String? @db.Text
+  experimentCount Int @default(0)
+  startedAt DateTime?
+  completedAt DateTime?
+  resultSummary String? @db.Text
+  protocolReference String?
+  labSampleReference String?
+  leadResearcherReference String?
+  experimentData Json?
+  trl Int?
+  formulationVersion String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([projectReference])
+  @@index([protocolReference])
+  @@index([labSampleReference])
+  @@index([formulationVersion])
+  @@map("research_development_chemistry_simulation")
+  @@schema("research_development")
+}
+model ProductCommercialProduct {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productCode String @unique
+  grade String?
+  revision String?
+  lifecycleStatus String?
+  effectiveFrom DateTime?
+  safetyDataSheetReference String?
+  specifications Json?
+  formulaVersionReference String?
+  hazardClass String?
+  shelfLifeMonths Int?
+  storageConditions String? @db.Text
+  releasedAt DateTime?
+  casNumber String?
+  ghsClassification Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([grade])
+  @@index([lifecycleStatus])
+  @@index([formulaVersionReference])
+  @@index([hazardClass])
+  @@index([casNumber])
+  @@map("product_commercial_product")
+  @@schema("product")
+}
+model ProductProductSpecification {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productCode String @unique
+  grade String?
+  revision String?
+  lifecycleStatus String?
+  effectiveFrom DateTime?
+  safetyDataSheetReference String?
+  specifications Json?
+  formulaVersionReference String?
+  hazardClass String?
+  shelfLifeMonths Int?
+  storageConditions String? @db.Text
+  releasedAt DateTime?
+  casNumber String?
+  ghsClassification Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([grade])
+  @@index([lifecycleStatus])
+  @@index([formulaVersionReference])
+  @@index([hazardClass])
+  @@index([casNumber])
+  @@map("product_product_specification")
+  @@schema("product")
+}
+model ProductProductLifecycleRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productCode String @unique
+  grade String?
+  revision String?
+  lifecycleStatus String?
+  effectiveFrom DateTime?
+  safetyDataSheetReference String?
+  specifications Json?
+  formulaVersionReference String?
+  hazardClass String?
+  shelfLifeMonths Int?
+  storageConditions String? @db.Text
+  releasedAt DateTime?
+  casNumber String?
+  ghsClassification Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([grade])
+  @@index([lifecycleStatus])
+  @@index([formulaVersionReference])
+  @@index([hazardClass])
+  @@index([casNumber])
+  @@map("product_product_lifecycle_record")
+  @@schema("product")
+}
+model ProductProductChange {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productCode String @unique
+  grade String?
+  revision String?
+  lifecycleStatus String?
+  effectiveFrom DateTime?
+  safetyDataSheetReference String?
+  specifications Json?
+  formulaVersionReference String?
+  hazardClass String?
+  shelfLifeMonths Int?
+  storageConditions String? @db.Text
+  releasedAt DateTime?
+  casNumber String?
+  ghsClassification Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([grade])
+  @@index([lifecycleStatus])
+  @@index([formulaVersionReference])
+  @@index([hazardClass])
+  @@index([casNumber])
+  @@map("product_product_change")
+  @@schema("product")
+}
+model ProductProductPortfolio {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ProductStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  productCode String @unique
+  grade String?
+  revision String?
+  lifecycleStatus String?
+  effectiveFrom DateTime?
+  safetyDataSheetReference String?
+  specifications Json?
+  formulaVersionReference String?
+  hazardClass String?
+  shelfLifeMonths Int?
+  storageConditions String? @db.Text
+  releasedAt DateTime?
+  casNumber String?
+  ghsClassification Json?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([grade])
+  @@index([lifecycleStatus])
+  @@index([formulaVersionReference])
+  @@index([hazardClass])
+  @@index([casNumber])
+  @@map("product_product_portfolio")
+  @@schema("product")
+}
+model QualityQualityInspection {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_quality_inspection")
+  @@schema("quality")
+}
+model QualityQualityAssuranceRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_quality_assurance_record")
+  @@schema("quality")
+}
+model QualityQualitySpecification {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_quality_specification")
+  @@schema("quality")
+}
+model QualityNonconformance {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_nonconformance")
+  @@schema("quality")
+}
+model QualityQualityAudit {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_quality_audit")
+  @@schema("quality")
+}
+model QualityProductRecall {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status QualityStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  subjectType String
+  subjectReference String
+  inspectionType String?
+  decision String?
+  inspectedAt DateTime?
+  dueAt DateTime?
+  findings String? @db.Text
+  evidenceReference String?
+  batchReference String?
+  specificationVersion String?
+  releasedByReference String?
+  decisionAt DateTime?
+  measurements Json?
+  capaReference String?
+  coaReference String?
+  usageDecision String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([subjectType])
+  @@index([subjectReference])
+  @@index([decision])
+  @@index([inspectedAt])
+  @@index([batchReference])
+  @@index([capaReference])
+  @@index([usageDecision])
+  @@map("quality_product_recall")
+  @@schema("quality")
+}
+model LaboratoryLabSample {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  sampleCode String?
+  sampleType String?
+  methodReference String?
+  resultValue Decimal? @db.Decimal(18, 4)
+  resultUnit String?
+  testedAt DateTime?
+  equipmentReference String?
+  measurementData Json?
+  batchReference String?
+  methodVersion String?
+  verifiedByReference String?
+  verifiedAt DateTime?
+  calibrationDueAt DateTime?
+  acceptanceCriteria String? @db.Text
+  specificationResult String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([sampleCode])
+  @@index([methodReference])
+  @@index([testedAt])
+  @@index([equipmentReference])
+  @@index([batchReference])
+  @@index([calibrationDueAt])
+  @@index([specificationResult])
+  @@map("laboratory_lab_sample")
+  @@schema("laboratory")
+}
+model LaboratoryLabTestExecution {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  sampleCode String?
+  sampleType String?
+  methodReference String?
+  resultValue Decimal? @db.Decimal(18, 4)
+  resultUnit String?
+  testedAt DateTime?
+  equipmentReference String?
+  measurementData Json?
+  batchReference String?
+  methodVersion String?
+  verifiedByReference String?
+  verifiedAt DateTime?
+  calibrationDueAt DateTime?
+  acceptanceCriteria String? @db.Text
+  specificationResult String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([sampleCode])
+  @@index([methodReference])
+  @@index([testedAt])
+  @@index([equipmentReference])
+  @@index([batchReference])
+  @@index([calibrationDueAt])
+  @@index([specificationResult])
+  @@map("laboratory_lab_test_execution")
+  @@schema("laboratory")
+}
+model LaboratoryTestResult {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  sampleCode String?
+  sampleType String?
+  methodReference String?
+  resultValue Decimal? @db.Decimal(18, 4)
+  resultUnit String?
+  testedAt DateTime?
+  equipmentReference String?
+  measurementData Json?
+  batchReference String?
+  methodVersion String?
+  verifiedByReference String?
+  verifiedAt DateTime?
+  calibrationDueAt DateTime?
+  acceptanceCriteria String? @db.Text
+  specificationResult String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([sampleCode])
+  @@index([methodReference])
+  @@index([testedAt])
+  @@index([equipmentReference])
+  @@index([batchReference])
+  @@index([calibrationDueAt])
+  @@index([specificationResult])
+  @@map("laboratory_test_result")
+  @@schema("laboratory")
+}
+model LaboratoryTestMethod {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("laboratory_test_method")
+  @@schema("laboratory")
+}
+model LaboratoryLabEquipment {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("laboratory_lab_equipment")
+  @@schema("laboratory")
+}
+model LaboratoryLabFacility {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("laboratory_lab_facility")
+  @@schema("laboratory")
+}
+model LaboratoryReagentInventory {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LaboratoryStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("laboratory_reagent_inventory")
+  @@schema("laboratory")
+}
+model EhsChemicalSafetyRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_chemical_safety_record")
+  @@schema("ehs")
+}
+model EhsRiskAssessment {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_risk_assessment")
+  @@schema("ehs")
+}
+model EhsSafetyIncident {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_safety_incident")
+  @@schema("ehs")
+}
+model EhsExposureAssessment {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_exposure_assessment")
+  @@schema("ehs")
+}
+model EhsEnvironmentalMonitoring {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_environmental_monitoring")
+  @@schema("ehs")
+}
+model EhsWasteManifest {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_waste_manifest")
+  @@schema("ehs")
+}
+model EhsEmergencyPlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status EhsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("ehs_emergency_plan")
+  @@schema("ehs")
+}
+model MaintenanceAssetsAsset {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_asset")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsMaintenancePlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_maintenance_plan")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsMaintenanceWorkOrder {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_maintenance_work_order")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsEquipmentBreakdown {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_equipment_breakdown")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsSparePartRequirement {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  itemReference String
+  lotNumber String?
+  quantity Decimal @db.Decimal(18, 4) @default(0)
+  unit String
+  warehouseCode String?
+  storageLocation String?
+  qualityStatus String?
+  quantityReserved Decimal? @db.Decimal(18, 4)
+  expiryDate DateTime?
+  batchReference String?
+  temperatureControlled Boolean?
+  recordedAt DateTime?
+  stockType String?
+  batchCharacteristics Json?
+  fefoPriority Int?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([itemReference])
+  @@index([lotNumber])
+  @@index([warehouseCode])
+  @@index([qualityStatus])
+  @@index([expiryDate])
+  @@index([batchReference])
+  @@index([recordedAt])
+  @@index([stockType])
+  @@map("maintenance_assets_spare_part_requirement")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsFacilityUtilityRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_facility_utility_record")
+  @@schema("maintenance_assets")
+}
+model MaintenanceAssetsEnergyRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status MaintenanceAssetsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  assetReference String
+  workType String?
+  priority String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  downtimeMinutes Int?
+  nextDueAt DateTime?
+  workDetails String? @db.Text
+  criticality String?
+  costCenterReference String?
+  requestedByReference String?
+  usedSpareParts Json?
+  failureMode String?
+  equipmentClass String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([assetReference])
+  @@index([workType])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([criticality])
+  @@index([costCenterReference])
+  @@index([equipmentClass])
+  @@map("maintenance_assets_energy_record")
+  @@schema("maintenance_assets")
+}
+model LogisticsTransportPlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  shipmentReference String?
+  origin String?
+  destination String?
+  carrierReference String?
+  dispatchedAt DateTime?
+  deliveredAt DateTime?
+  freightCost Decimal? @db.Decimal(18, 4)
+  currency String?
+  hazardousGoods Boolean @default(false)
+  dangerousGoodsClass String?
+  trackingReference String?
+  temperatureRange String?
+  costCenterReference String?
+  proofOfDeliveryReference String?
+  incoterm String?
+  unNumber String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([shipmentReference])
+  @@index([carrierReference])
+  @@index([dispatchedAt])
+  @@index([dangerousGoodsClass])
+  @@index([trackingReference])
+  @@index([costCenterReference])
+  @@index([unNumber])
+  @@map("logistics_transport_plan")
+  @@schema("logistics")
+}
+model LogisticsCarrier {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("logistics_carrier")
+  @@schema("logistics")
+}
+model LogisticsShipment {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  shipmentReference String?
+  origin String?
+  destination String?
+  carrierReference String?
+  dispatchedAt DateTime?
+  deliveredAt DateTime?
+  freightCost Decimal? @db.Decimal(18, 4)
+  currency String?
+  hazardousGoods Boolean @default(false)
+  dangerousGoodsClass String?
+  trackingReference String?
+  temperatureRange String?
+  costCenterReference String?
+  proofOfDeliveryReference String?
+  incoterm String?
+  unNumber String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([shipmentReference])
+  @@index([carrierReference])
+  @@index([dispatchedAt])
+  @@index([dangerousGoodsClass])
+  @@index([trackingReference])
+  @@index([costCenterReference])
+  @@index([unNumber])
+  @@map("logistics_shipment")
+  @@schema("logistics")
+}
+model LogisticsDangerousGoodsDeclaration {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  hazardClass String?
+  severity String?
+  likelihood Int?
+  occurredAt DateTime?
+  reportedAt DateTime?
+  locationReference String?
+  correctiveAction String? @db.Text
+  exposureValue Decimal? @db.Decimal(18, 4)
+  exposureUnit String?
+  wasteClass String?
+  regulatoryReference String?
+  mitigation String? @db.Text
+  incidentType String?
+  emissionValue Decimal? @db.Decimal(18, 4)
+  emissionUnit String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([hazardClass])
+  @@index([severity])
+  @@index([occurredAt])
+  @@index([locationReference])
+  @@index([wasteClass])
+  @@index([regulatoryReference])
+  @@index([incidentType])
+  @@map("logistics_dangerous_goods_declaration")
+  @@schema("logistics")
+}
+model LogisticsShipmentTrackingEvent {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  shipmentReference String?
+  origin String?
+  destination String?
+  carrierReference String?
+  dispatchedAt DateTime?
+  deliveredAt DateTime?
+  freightCost Decimal? @db.Decimal(18, 4)
+  currency String?
+  hazardousGoods Boolean @default(false)
+  dangerousGoodsClass String?
+  trackingReference String?
+  temperatureRange String?
+  costCenterReference String?
+  proofOfDeliveryReference String?
+  incoterm String?
+  unNumber String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([shipmentReference])
+  @@index([carrierReference])
+  @@index([dispatchedAt])
+  @@index([dangerousGoodsClass])
+  @@index([trackingReference])
+  @@index([costCenterReference])
+  @@index([unNumber])
+  @@map("logistics_shipment_tracking_event")
+  @@schema("logistics")
+}
+model LogisticsFreightCost {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status LogisticsStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("logistics_freight_cost")
+  @@schema("logistics")
+}
+model SalesDistributionCustomer {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("sales_distribution_customer")
+  @@schema("sales_distribution")
+}
+model SalesDistributionSalesQuotation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  customerReference String?
+  orderReference String?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  requestedDeliveryAt DateTime?
+  promisedDeliveryAt DateTime?
+  billingReference String?
+  channelReference String?
+  qualityReleaseReference String?
+  creditStatus String?
+  confirmedAt DateTime?
+  lineItems Json?
+  incoterm String?
+  coaRequired Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([customerReference])
+  @@index([orderReference])
+  @@index([channelReference])
+  @@index([creditStatus])
+  @@map("sales_distribution_sales_quotation")
+  @@schema("sales_distribution")
+}
+model SalesDistributionSalesOrder {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  customerReference String?
+  orderReference String?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  requestedDeliveryAt DateTime?
+  promisedDeliveryAt DateTime?
+  billingReference String?
+  channelReference String?
+  qualityReleaseReference String?
+  creditStatus String?
+  confirmedAt DateTime?
+  lineItems Json?
+  incoterm String?
+  coaRequired Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([customerReference])
+  @@index([orderReference])
+  @@index([channelReference])
+  @@index([creditStatus])
+  @@map("sales_distribution_sales_order")
+  @@schema("sales_distribution")
+}
+model SalesDistributionSalesOrderLine {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  customerReference String?
+  orderReference String?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  requestedDeliveryAt DateTime?
+  promisedDeliveryAt DateTime?
+  billingReference String?
+  channelReference String?
+  qualityReleaseReference String?
+  creditStatus String?
+  confirmedAt DateTime?
+  lineItems Json?
+  incoterm String?
+  coaRequired Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([customerReference])
+  @@index([orderReference])
+  @@index([channelReference])
+  @@index([creditStatus])
+  @@map("sales_distribution_sales_order_line")
+  @@schema("sales_distribution")
+}
+model SalesDistributionPriceList {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  customerReference String?
+  orderReference String?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  requestedDeliveryAt DateTime?
+  promisedDeliveryAt DateTime?
+  billingReference String?
+  channelReference String?
+  qualityReleaseReference String?
+  creditStatus String?
+  confirmedAt DateTime?
+  lineItems Json?
+  incoterm String?
+  coaRequired Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([customerReference])
+  @@index([orderReference])
+  @@index([channelReference])
+  @@index([creditStatus])
+  @@map("sales_distribution_price_list")
+  @@schema("sales_distribution")
+}
+model SalesDistributionDistributionNode {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("sales_distribution_distribution_node")
+  @@schema("sales_distribution")
+}
+model SalesDistributionCustomerServiceCase {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status SalesDistributionStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  customerReference String?
+  orderReference String?
+  currency String?
+  totalAmount Decimal? @db.Decimal(18, 4)
+  requestedDeliveryAt DateTime?
+  promisedDeliveryAt DateTime?
+  billingReference String?
+  channelReference String?
+  qualityReleaseReference String?
+  creditStatus String?
+  confirmedAt DateTime?
+  lineItems Json?
+  incoterm String?
+  coaRequired Boolean?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([customerReference])
+  @@index([orderReference])
+  @@index([channelReference])
+  @@index([creditStatus])
+  @@map("sales_distribution_customer_service_case")
+  @@schema("sales_distribution")
+}
+model FinanceLedgerAccount {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  category String?
+  code String? @unique
+  active Boolean @default(true)
+  ownerReference String?
+  notes String? @db.Text
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceSystem String?
+  uom String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([active])
+  @@index([ownerReference])
+  @@index([effectiveFrom])
+  @@index([effectiveUntil])
+  @@map("finance_ledger_account")
+  @@schema("finance")
+}
+model FinanceFinancialDocument {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("finance_financial_document")
+  @@schema("finance")
+}
+model FinanceCostRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("finance_cost_record")
+  @@schema("finance")
+}
+model FinanceBudgetPlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("finance_budget_plan")
+  @@schema("finance")
+}
+model FinanceCashFlowRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("finance_cash_flow_record")
+  @@schema("finance")
+}
+model FinanceProfitabilityAnalysis {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status FinanceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  documentNumber String?
+  accountCode String?
+  amount Decimal @db.Decimal(18, 4)
+  currency String
+  periodStart DateTime?
+  periodEnd DateTime?
+  postedAt DateTime?
+  counterpartyReference String?
+  postingStatus String?
+  purchaseOrderReference String?
+  salesOrderReference String?
+  fiscalPeriod String?
+  reversedAt DateTime?
+  allocation Json?
+  costCenterReference String?
+  batchCostReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([documentNumber])
+  @@index([accountCode])
+  @@index([postedAt])
+  @@index([counterpartyReference])
+  @@index([postingStatus])
+  @@index([purchaseOrderReference])
+  @@index([salesOrderReference])
+  @@index([fiscalPeriod])
+  @@index([costCenterReference])
+  @@index([batchCostReference])
+  @@map("finance_profitability_analysis")
+  @@schema("finance")
+}
+model HumanResourcesEmployee {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status HumanResourcesStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  employeeReference String?
+  roleTitle String?
+  shiftCode String?
+  startsAt DateTime?
+  endsAt DateTime?
+  competencyCode String?
+  trainingCompletedAt DateTime?
+  score Decimal? @db.Decimal(18, 4)
+  departmentReference String?
+  qualificationExpiresAt DateTime?
+  trainingProvider String?
+  skillMatrix Json?
+  certificationReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([employeeReference])
+  @@index([shiftCode])
+  @@index([startsAt])
+  @@index([competencyCode])
+  @@index([departmentReference])
+  @@index([qualificationExpiresAt])
+  @@map("human_resources_employee")
+  @@schema("human_resources")
+}
+model HumanResourcesShiftSchedule {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status HumanResourcesStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  employeeReference String?
+  roleTitle String?
+  shiftCode String?
+  startsAt DateTime?
+  endsAt DateTime?
+  competencyCode String?
+  trainingCompletedAt DateTime?
+  score Decimal? @db.Decimal(18, 4)
+  departmentReference String?
+  qualificationExpiresAt DateTime?
+  trainingProvider String?
+  skillMatrix Json?
+  certificationReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([employeeReference])
+  @@index([shiftCode])
+  @@index([startsAt])
+  @@index([competencyCode])
+  @@index([departmentReference])
+  @@index([qualificationExpiresAt])
+  @@map("human_resources_shift_schedule")
+  @@schema("human_resources")
+}
+model HumanResourcesTrainingRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status HumanResourcesStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  employeeReference String?
+  roleTitle String?
+  shiftCode String?
+  startsAt DateTime?
+  endsAt DateTime?
+  competencyCode String?
+  trainingCompletedAt DateTime?
+  score Decimal? @db.Decimal(18, 4)
+  departmentReference String?
+  qualificationExpiresAt DateTime?
+  trainingProvider String?
+  skillMatrix Json?
+  certificationReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([employeeReference])
+  @@index([shiftCode])
+  @@index([startsAt])
+  @@index([competencyCode])
+  @@index([departmentReference])
+  @@index([qualificationExpiresAt])
+  @@map("human_resources_training_record")
+  @@schema("human_resources")
+}
+model HumanResourcesWorkforcePlan {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status HumanResourcesStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  periodStart DateTime
+  periodEnd DateTime
+  scenario String?
+  plannedQuantity Decimal? @db.Decimal(18, 4)
+  committedQuantity Decimal? @db.Decimal(18, 4)
+  unit String?
+  planningLevel String?
+  approvedAt DateTime?
+  approvedByReference String?
+  assumptions Json?
+  version String?
+  frozen Boolean?
+  campaignReference String?
+  processMode String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([scenario])
+  @@index([planningLevel])
+  @@index([version])
+  @@index([campaignReference])
+  @@index([processMode])
+  @@map("human_resources_workforce_plan")
+  @@schema("human_resources")
+}
+model HumanResourcesPerformanceReview {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status HumanResourcesStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  employeeReference String?
+  roleTitle String?
+  shiftCode String?
+  startsAt DateTime?
+  endsAt DateTime?
+  competencyCode String?
+  trainingCompletedAt DateTime?
+  score Decimal? @db.Decimal(18, 4)
+  departmentReference String?
+  qualificationExpiresAt DateTime?
+  trainingProvider String?
+  skillMatrix Json?
+  certificationReference String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([employeeReference])
+  @@index([shiftCode])
+  @@index([startsAt])
+  @@index([competencyCode])
+  @@index([departmentReference])
+  @@index([qualificationExpiresAt])
+  @@map("human_resources_performance_review")
+  @@schema("human_resources")
+}
+model ComplianceRegulatoryRequirement {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_regulatory_requirement")
+  @@schema("compliance")
+}
+model ComplianceCertificationRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_certification_record")
+  @@schema("compliance")
+}
+model ComplianceOperatingPermit {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_operating_permit")
+  @@schema("compliance")
+}
+model ComplianceControlledDocument {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_controlled_document")
+  @@schema("compliance")
+}
+model ComplianceComplianceAudit {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_compliance_audit")
+  @@schema("compliance")
+}
+model ComplianceChangeControlRecord {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  reference String @unique
+  name String
+  status ComplianceStudioRecordStatus @default(DRAFT)
+  description String? @db.Text
+  requirementCode String?
+  jurisdiction String?
+  authority String?
+  effectiveFrom DateTime?
+  effectiveUntil DateTime?
+  sourceDocumentReference String?
+  reviewedAt DateTime?
+  reviewStatus String?
+  evidenceReference String?
+  documentType String?
+  documentNumber String?
+  issuedAt DateTime?
+  renewalDueAt DateTime?
+  labScope Json?
+  auditFindings Json?
+  complianceStatus String?
+  reachStatus String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([name])
+  @@index([status])
+  @@index([requirementCode])
+  @@index([jurisdiction])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@index([documentNumber])
+  @@index([renewalDueAt])
+  @@index([complianceStatus])
+  @@index([reachStatus])
+  @@map("compliance_change_control_record")
+  @@schema("compliance")
+}
+
+// ---------------------------------------------------------------------------
+// Platform tables: identity, tenancy, audit, notification, files, workflow,
+// module registry, flags, search, integration and optional messaging.
+// ---------------------------------------------------------------------------
+model ChemicalistTenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chemicalist_tenant")
+  @@schema("public")
+}
+
+model ChemicalistOrganization {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  code      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, name])
+  @@index([tenantId])
+
+  @@map("chemicalist_organization")
+  @@schema("public")
+}
+
+model ChemicalistUser {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String?   @db.Uuid
+  email           String    @unique
+  username        String?   @unique
+  passwordHash    String
+  displayName     String?
+  status          String    @default("ACTIVE")
+  isPlatformAdmin Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  mobileVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([tenantId])
+
+  @@map("chemicalist_user")
+  @@schema("public")
+}
+
+model ChemicalistUserProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @db.Uuid
+  tenantId    String?  @db.Uuid
+  firstName   String?
+  lastName    String?
+  phone       String?
+  avatarUrl   String?
+  locale      String?
+  timeZone    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([tenantId])
+
+  @@map("chemicalist_user_profile")
+  @@schema("public")
+}
+
+model ChemicalistUserDevice {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  deviceKey   String
+  name        String?
+  platform    String?
+  userAgent   String?
+  lastSeenAt  DateTime  @default(now())
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@unique([userId, deviceKey])
+  @@index([userId, revokedAt])
+
+  @@map("chemicalist_user_device")
+  @@schema("public")
+}
+
+model ChemicalistUserCredential {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  type         String
+  provider     String    @default("local")
+  identifier   String
+  secretHash   String?
+  verifiedAt   DateTime?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@unique([provider, identifier])
+  @@index([userId, type])
+
+  @@map("chemicalist_user_credential")
+  @@schema("public")
+}
+
+model ChemicalistRole {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String?  @db.Uuid
+  key       String
+  name      String
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@unique([tenantId, key])
+
+  @@map("chemicalist_role")
+  @@schema("public")
+}
+
+model ChemicalistRoleGroup {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  key         String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([tenantId, key])
+
+  @@map("chemicalist_role_group")
+  @@schema("public")
+}
+
+model ChemicalistRoleGroupRole {
+  roleGroupId String @db.Uuid
+  roleId      String @db.Uuid
+  
+  @@id([roleGroupId, roleId])
+  @@index([roleId])
+
+  @@map("chemicalist_role_group_role")
+  @@schema("public")
+}
+
+model ChemicalistUserRoleGroup {
+  userId      String   @db.Uuid
+  roleGroupId String   @db.Uuid
+  tenantId    String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  
+  @@id([userId, roleGroupId])
+  @@index([roleGroupId])
+
+  @@map("chemicalist_user_role_group")
+  @@schema("public")
+}
+
+model ChemicalistPermissionGroup {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  key         String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([tenantId, key])
+
+  @@map("chemicalist_permission_group")
+  @@schema("public")
+}
+
+model ChemicalistPermissionGroupPermission {
+  permissionGroupId String @db.Uuid
+  permissionId      String @db.Uuid
+  
+  @@id([permissionGroupId, permissionId])
+  @@index([permissionId])
+
+  @@map("chemicalist_permission_group_permission")
+  @@schema("public")
+}
+
+model ChemicalistPermission {
+  id          String  @id @default(uuid()) @db.Uuid
+  key         String  @unique
+  description String?
+
+  @@map("chemicalist_permission")
+  @@schema("public")
+}
+
+model ChemicalistRolePermission {
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+  
+  @@id([roleId, permissionId])
+  @@index([roleId])
+
+  @@map("chemicalist_role_permission")
+  @@schema("public")
+}
+
+model ChemicalistUserRole {
+  userId   String  @db.Uuid
+  roleId   String  @db.Uuid
+  tenantId String? @db.Uuid
+  
+  @@id([userId, roleId])
+  @@index([userId])
+
+  @@map("chemicalist_user_role")
+  @@schema("public")
+}
+
+model ChemicalistUserSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  deviceId    String?   @db.Uuid
+  userAgent   String?
+  ip          String?
+  expiresAt   DateTime
+  lastSeenAt  DateTime  @default(now())
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([userId, revokedAt])
+
+  @@map("chemicalist_user_session")
+  @@schema("public")
+}
+
+model ChemicalistRefreshToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  sessionId     String    @db.Uuid
+  tokenHash     String    @unique
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  replacedById  String?   @db.Uuid
+  createdAt     DateTime  @default(now())
+  
+  @@index([userId, revokedAt])
+  @@index([sessionId])
+  @@index([expiresAt])
+
+  @@map("chemicalist_refresh_token")
+  @@schema("public")
+}
+
+model ChemicalistEmailVerifyToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  tokenHash   String    @unique
+  email       String
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, expiresAt])
+
+  @@map("chemicalist_email_verify_token")
+  @@schema("public")
+}
+
+model ChemicalistMobileVerifyToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  tokenHash   String    @unique
+  mobile      String
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, expiresAt])
+
+  @@map("chemicalist_mobile_verify_token")
+  @@schema("public")
+}
+
+model ChemicalistAuditEntry {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String?  @db.Uuid
+  actorId      String?
+  actorEmail   String?
+  action       String
+  resourceType String?
+  resourceId   String?
+  outcome      String   @default("SUCCESS")
+  ip           String?
+  userAgent    String?
+  requestId    String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  
+  @@index([tenantId, createdAt])
+  @@index([action])
+
+  @@map("chemicalist_audit_entry")
+  @@schema("public")
+}
+
+model ChemicalistCountry {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  code      String
+  name      String
+  nativeName String?
+  phoneCode String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, code])
+  @@index([tenantId, name])
+
+  @@map("chemicalist_country")
+  @@schema("public")
+}
+
+model ChemicalistRegion {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  countryId String   @db.Uuid
+  code      String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, countryId, code])
+  @@index([tenantId, countryId, name])
+
+  @@map("chemicalist_region")
+  @@schema("public")
+}
+
+model ChemicalistCity {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  regionId  String   @db.Uuid
+  code      String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, regionId, code])
+  @@index([tenantId, regionId, name])
+
+  @@map("chemicalist_city")
+  @@schema("public")
+}
+
+model ChemicalistUserAddress {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  userId       String    @db.Uuid
+  title        String
+  countryId    String    @db.Uuid
+  regionId     String    @db.Uuid
+  cityId       String    @db.Uuid
+  addressLine1 String
+  addressLine2 String?
+  postalCode   String?
+  latitude     Float?
+  longitude    Float?
+  isDefault    Boolean   @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([tenantId, userId, deletedAt])
+  @@index([tenantId, countryId, regionId, cityId])
+
+  @@map("chemicalist_user_address")
+  @@schema("public")
+}
+
+model ChemicalistNotification {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String?   @db.Uuid
+  recipientId String
+  channel     String    @default("IN_APP")
+  template    String
+  title       String
+  body        String    @db.Text
+  status      String    @default("QUEUED")
+  readAt      DateTime?
+  sentAt      DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  
+  @@index([recipientId, createdAt])
+  @@index([tenantId])
+
+  @@map("chemicalist_notification")
+  @@schema("public")
+}
+
+model ChemicalistFileObject {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  ownerId     String?
+  fileName    String
+  contentType String
+  size        Int
+  storageKey  String   @unique
+  checksum    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  
+  @@index([tenantId])
+
+  @@map("chemicalist_file_object")
+  @@schema("public")
+}
+
+model ChemicalistWorkflowDefinition {
+  id        String   @id @default(uuid()) @db.Uuid
+  scope     String   @default("global")
+  tenantId  String?  @db.Uuid
+  key       String
+  name      String
+  version   Int      @default(1)
+  steps     Json
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([scope, key, version])
+
+  @@map("chemicalist_workflow_definition")
+  @@schema("public")
+}
+
+model ChemicalistWorkflowInstance {
+  id           String    @id @default(uuid()) @db.Uuid
+  definitionId String    @db.Uuid
+  tenantId     String?   @db.Uuid
+  status       String    @default("RUNNING")
+  currentStep  Int       @default(0)
+  context      Json
+  history      Json
+  lastError    String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([definitionId, status])
+  @@index([tenantId])
+
+  @@map("chemicalist_workflow_instance")
+  @@schema("public")
+}
+
+model ChemicalistModuleRegistration {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  lab         String
+  studio      String?
+  title       String
+  version     String   @default("1.0.0")
+  status      String   @default("INSTALLED")
+  installedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("chemicalist_module_registration")
+  @@schema("public")
+}
+
+model ChemicalistEntitlement {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @db.Uuid
+  moduleKey  String
+  plan       String    @default("standard")
+  status     String    @default("ACTIVE")
+  validFrom  DateTime  @default(now())
+  validUntil DateTime?
+  
+  @@unique([tenantId, moduleKey])
+
+  @@map("chemicalist_entitlement")
+  @@schema("public")
+}
+
+model ChemicalistFeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  scope       String   @default("global")
+  tenantId    String?  @db.Uuid
+  key         String
+  enabled     Boolean  @default(false)
+  value       Json?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([scope, key])
+
+  @@map("chemicalist_feature_flag")
+  @@schema("public")
+}
+
+model ChemicalistIntegrationEndpoint {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  key       String
+  url       String
+  secret    String
+  events    String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, key])
+
+  @@map("chemicalist_integration_endpoint")
+  @@schema("public")
+}
+
+model ChemicalistIntegrationDelivery {
+  id             String    @id @default(uuid()) @db.Uuid
+  endpointId     String    @db.Uuid
+  eventId        String
+  eventType      String
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  responseStatus Int?
+  lastError      String?
+  createdAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+  
+  @@index([endpointId, createdAt])
+
+  @@map("chemicalist_integration_delivery")
+  @@schema("public")
+}
+
+model ChemicalistSearchDocument {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String?  @db.Uuid
+  entityType String
+  entityId   String
+  title      String
+  body       String   @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([entityType, entityId])
+  @@index([tenantId])
+
+  @@map("chemicalist_search_document")
+  @@schema("public")
+}
+
+model ChemicalistOutboxMessage {
+  id            String    @id @default(uuid()) @db.Uuid
+  eventId       String    @unique
+  eventType     String
+  aggregateType String
+  aggregateId   String
+  tenantId      String?
+  payload       Json
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  lastError     String?
+  occurredAt    DateTime  @default(now())
+  availableAt   DateTime  @default(now())
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  
+  @@index([status, availableAt])
+
+  @@map("chemicalist_outbox_message")
+  @@schema("public")
+}
+
+model ChemicalistProcessedMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  consumer    String
+  messageId   String
+  processedAt DateTime @default(now())
+  
+  @@unique([consumer, messageId])
+
+  @@map("chemicalist_processed_message")
+  @@schema("public")
+}
+
+model ChemicalistSagaState {
+  id          String   @id @default(uuid()) @db.Uuid
+  sagaType    String
+  status      String   @default("PENDING")
+  currentStep Int      @default(0)
+  context     Json
+  lastError   String?
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([sagaType, status])
+
+  @@map("chemicalist_saga_state")
+  @@schema("public")
+}

@@ -1,0 +1,30 @@
+{
+  "lab": "Supply Chain",
+  "studio": "Supplier Management",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "SupplyChainSupplier"
+  ],
+  "catalogKey": "supply-chain/supplier-management",
+  "catalogMetadata": {
+    "ownership": "Suppliers, supplier assessment, sourcing, procurement, purchasing contracts, and commercial import/export.",
+    "publicEvents": [
+      "SupplierApprovedForBusiness",
+      "PurchaseOrderApproved",
+      "PurchaseOrderChanged",
+      "PurchaseOrderCancelled",
+      "SupplierDeliveryExpected"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

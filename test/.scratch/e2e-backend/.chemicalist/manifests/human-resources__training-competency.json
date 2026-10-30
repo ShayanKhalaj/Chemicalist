@@ -1,0 +1,30 @@
+{
+  "lab": "Human Resources",
+  "studio": "Training & Competency",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "HumanResourcesTrainingRecord"
+  ],
+  "catalogKey": "human-resources/training-competency",
+  "catalogMetadata": {
+    "ownership": "Employees, workforce plans, shifts, training, competency, and workforce performance.",
+    "publicEvents": [
+      "EmployeeWorkforceStatusChanged",
+      "ShiftSchedulePublished",
+      "CompetencyGranted",
+      "TrainingCompleted",
+      "RequiredQualificationExpired"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

@@ -1,0 +1,15 @@
+{
+  "lab": "Human Resources",
+  "studio": "Workforce Management",
+  "description": "Employee workforce records; platform Identity remains the owner of login accounts.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "HumanResourcesEmployee"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

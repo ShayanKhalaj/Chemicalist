@@ -1,0 +1,30 @@
+{
+  "lab": "Production",
+  "studio": "Production Performance",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ProductionProductionMetric"
+  ],
+  "catalogKey": "production/production-performance",
+  "catalogMetadata": {
+    "ownership": "Production orders, batch execution, material consumption, produced quantity, waste, downtime, and performance.",
+    "publicEvents": [
+      "ProductionOrderReleased",
+      "BatchStarted",
+      "MaterialConsumptionRecorded",
+      "ProductionOperationCompleted",
+      "BatchProduced"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

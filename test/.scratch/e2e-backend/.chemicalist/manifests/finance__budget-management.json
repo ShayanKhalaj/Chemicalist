@@ -1,0 +1,32 @@
+{
+  "lab": "Finance",
+  "studio": "Budget Management",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "FinanceBudgetPlan"
+  ],
+  "catalogKey": "finance/budget-management",
+  "catalogMetadata": {
+    "ownership": "Accounting ledger, receivables, payables, formal financial documents, cost, budget, cash flow, and profitability.",
+    "publicEvents": [
+      "SupplierInvoiceRecorded",
+      "CustomerInvoiceIssued",
+      "PaymentReceived",
+      "PaymentExecuted",
+      "CostEntryPosted",
+      "BudgetApproved",
+      "FinancialPeriodClosed"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

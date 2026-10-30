@@ -1,0 +1,15 @@
+{
+  "lab": "Process & Engineering",
+  "studio": "Process Optimization",
+  "description": "Optimization studies and documented process assumptions.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ProcessEngineeringOptimizationStudy"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

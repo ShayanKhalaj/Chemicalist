@@ -1,0 +1,15 @@
+{
+  "lab": "Process & Engineering",
+  "studio": "Scale-up",
+  "description": "Scale-up assessments from laboratory to industrial process.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ProcessEngineeringScaleUpStudy"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

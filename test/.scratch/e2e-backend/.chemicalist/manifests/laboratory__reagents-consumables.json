@@ -1,0 +1,33 @@
+{
+  "lab": "Laboratory",
+  "studio": "Reagents & Consumables",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "LaboratoryReagentInventory"
+  ],
+  "catalogKey": "laboratory/reagents-consumables",
+  "catalogMetadata": {
+    "ownership": "Samples, test execution, laboratory methods, measurement results, equipment, facilities, reagents, and consumables.",
+    "publicEvents": [
+      "SampleRegistered",
+      "SampleTestRequested",
+      "TestExecutionStarted",
+      "TestResultRecorded",
+      "TestResultVerified",
+      "LabEquipmentStatusChanged"
+    ],
+    "dependencies": [
+      "inventory"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

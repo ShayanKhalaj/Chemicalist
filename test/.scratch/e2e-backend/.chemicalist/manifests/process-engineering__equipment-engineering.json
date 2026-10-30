@@ -1,0 +1,32 @@
+{
+  "lab": "Process & Engineering",
+  "studio": "Equipment Engineering",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ProcessEngineeringEquipmentSpecification"
+  ],
+  "catalogKey": "process-engineering/equipment-engineering",
+  "catalogMetadata": {
+    "ownership": "Process definitions and parameters, engineering equipment specifications, technical changes, and scale-up assessments.",
+    "publicEvents": [
+      "ProcessDefinitionApproved",
+      "ProcessVersionReleased",
+      "EngineeringChangeProposed",
+      "EngineeringChangeApproved",
+      "ScaleUpAssessmentCompleted"
+    ],
+    "dependencies": [
+      "maintenance-assets"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

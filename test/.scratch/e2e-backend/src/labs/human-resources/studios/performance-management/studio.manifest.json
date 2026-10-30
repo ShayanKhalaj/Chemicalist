@@ -1,0 +1,15 @@
+{
+  "lab": "Human Resources",
+  "studio": "Performance Management",
+  "description": "Workforce performance review records and evaluation periods.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "HumanResourcesPerformanceReview"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

@@ -1,0 +1,30 @@
+{
+  "lab": "Product",
+  "studio": "Product Portfolio",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ProductProductPortfolio"
+  ],
+  "catalogKey": "product/product-portfolio",
+  "catalogMetadata": {
+    "ownership": "Commercial product identity, released product versions, official specifications, and product lifecycle.",
+    "publicEvents": [
+      "ProductCreated",
+      "ProductVersionReleased",
+      "ProductSpecificationChanged",
+      "ProductLifecycleStatusChanged",
+      "ProductDiscontinued"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

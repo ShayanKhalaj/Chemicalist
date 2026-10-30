@@ -1,0 +1,34 @@
+{
+  "lab": "Logistics",
+  "studio": "Dangerous Goods",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "LogisticsDangerousGoodsDeclaration"
+  ],
+  "catalogKey": "logistics/dangerous-goods",
+  "catalogMetadata": {
+    "ownership": "Transport plans, carriers, shipments, tracking, delivery, freight costs, and dangerous-goods transport operations.",
+    "publicEvents": [
+      "ShipmentCreated",
+      "ShipmentDispatched",
+      "ShipmentStatusChanged",
+      "ShipmentDelivered",
+      "ShipmentDeliveryFailed",
+      "FreightCostRecorded"
+    ],
+    "dependencies": [
+      "ehs",
+      "compliance"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

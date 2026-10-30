@@ -1,0 +1,30 @@
+{
+  "lab": "Process & Engineering",
+  "studio": "Process Optimization",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "ProcessEngineeringOptimizationStudy"
+  ],
+  "catalogKey": "process-engineering/process-optimization",
+  "catalogMetadata": {
+    "ownership": "Process definitions and parameters, engineering equipment specifications, technical changes, and scale-up assessments.",
+    "publicEvents": [
+      "ProcessDefinitionApproved",
+      "ProcessVersionReleased",
+      "EngineeringChangeProposed",
+      "EngineeringChangeApproved",
+      "ScaleUpAssessmentCompleted"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

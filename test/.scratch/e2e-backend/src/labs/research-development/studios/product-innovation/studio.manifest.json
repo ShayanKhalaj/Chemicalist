@@ -1,0 +1,15 @@
+{
+  "lab": "R&D",
+  "studio": "Product Innovation",
+  "description": "Development candidates proposed to Product; this does not create an active commercial product.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "ResearchDevelopmentDevelopmentCandidate"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

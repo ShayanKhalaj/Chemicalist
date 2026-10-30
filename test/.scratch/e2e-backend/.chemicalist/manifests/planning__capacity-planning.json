@@ -1,0 +1,33 @@
+{
+  "lab": "Planning",
+  "studio": "Capacity Planning",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "PlanningCapacityPlan"
+  ],
+  "catalogKey": "planning/capacity-planning",
+  "catalogMetadata": {
+    "ownership": "Demand forecasts, supply and production plans, planned capacity, and approved S&OP cycles.",
+    "publicEvents": [
+      "DemandForecastPublished",
+      "SupplyPlanPublished",
+      "ProductionPlanPublished",
+      "CapacityPlanPublished",
+      "SOPCycleApproved"
+    ],
+    "dependencies": [
+      "maintenance-assets",
+      "human-resources"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

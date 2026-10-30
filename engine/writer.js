@@ -11,6 +11,9 @@
  *    `--force` is given.
  *  - Files without the marker are never overwritten (conflict, or preserved
  *    application-owned files).
+ *  - Files the previous generation owned but the current plan no longer
+ *    produces (a studio removed from the project) are reported as `skipped`
+ *    instead of being left behind silently; nothing is deleted.
  *  - Every path is normalized and must stay inside the output directory.
  */
 
@@ -234,6 +237,19 @@ function plan(root, outputPlan, options = {}) {
     }
 
     results.push(entry);
+  }
+
+  // Generator-owned files of earlier runs that this plan no longer produces
+  // (a Studio was removed from the application). Leaving them in place would
+  // keep stale Prisma models or modules in the project, so they are reported.
+  const planned = new Set(results.map((entry) => entry.path));
+  for (const relativePath of Object.keys(state.files || {})) {
+    if (planned.has(relativePath)) continue;
+    results.push({
+      path: relativePath,
+      status: "skipped",
+      reason: "no longer produced by the generator (Studio removed?)",
+    });
   }
 
   // App-owned files with generated blocks: classified by content diff only.

@@ -1,0 +1,15 @@
+{
+  "lab": "Maintenance & Assets",
+  "studio": "Work Orders",
+  "description": "Maintenance work requests, priorities, and execution windows.",
+  "app": {
+    "name": "chemicalist-platform",
+    "apiPrefix": "api",
+    "apiVersion": "1"
+  },
+  "models": [
+    "MaintenanceAssetsMaintenanceWorkOrder"
+  ],
+  "generatedBy": "chemicalist 2.0.0",
+  "sourceManifest": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json"
+}

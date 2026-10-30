@@ -21,6 +21,7 @@ const {
   kebabPlural,
   camelPlural,
   constant,
+  schemaName,
 } = require("./naming");
 const { tsType } = require("./ts");
 
@@ -31,6 +32,8 @@ const DEFAULT_REGISTRY = {
   studios: {},
 };
 const API_ROOT = "src/app";
+/** PostgreSQL schema owned by the platform (identity, tenancy, audit, ...). */
+const PLATFORM_SCHEMA = "public";
 
 function readRegistryFile(filePath) {
   const fs = require("node:fs");
@@ -289,6 +292,9 @@ function buildContext(current, previousStudios = {}, options = {}) {
   // Studio-level derived data. Relationships are collected once for the whole
   // application so cross-studio relations are rendered too.
   ctx.appManifests = appManifests;
+  ctx.platformSchema = PLATFORM_SCHEMA;
+  // One PostgreSQL schema per Lab, derived from `labSlug` (never hardcoded).
+  ctx.labSchemas = buildLabSchemas(appManifests);
   const relations = appManifests.flatMap((m) => m.relations || []);
   ctx.manifestRelations = relations;
   const studio = buildStudioDescriptor(current, ctx, relations);
@@ -314,6 +320,11 @@ function buildContext(current, previousStudios = {}, options = {}) {
     .flatMap((manifest) => buildStudioDescriptor(manifest, ctx, relations).models)
     .sort((a, b) => (a.name < b.name ? -1 : 1));
 
+  // Every registered studio (not only the current run) with its models. Used
+  // by generators whose output is application-wide and must therefore stay
+  // stable no matter which manifest triggered the generation.
+  ctx.registeredStudios = buildRegisteredStudios(ctx);
+
   ctx.modelByName = (name) => {
     const owned = studio.models.find((model) => model.name === name);
     if (!owned) {
@@ -325,6 +336,83 @@ function buildContext(current, previousStudios = {}, options = {}) {
   ctx.importLine = importLine;
   ctx.rel = rel;
   return ctx;
+}
+
+/**
+ * Studio descriptor (`ctx.studio`) of every registered studio, including the
+ * one being generated, in registry order. App-wide files (Prisma schema,
+ * repositories, reports, navigation) must cover the whole application, not
+ * only the studio of the current run.
+ */
+function buildRegisteredStudios(ctx) {
+  const known = new Map(
+    (ctx.appManifests || []).map((manifest) => [
+      manifest.labSlug + "/" + manifest.studioSlug,
+      manifest,
+    ]),
+  );
+  const ordered = [];
+  for (const entry of ctx.studios || []) {
+    const manifest = known.get(entry.labSlug + "/" + entry.studioSlug);
+    if (manifest && !ordered.includes(manifest)) ordered.push(manifest);
+  }
+  for (const manifest of ctx.appManifests || []) {
+    if (!ordered.includes(manifest)) ordered.push(manifest);
+  }
+  return ordered.map((manifest) =>
+    buildStudioDescriptor(manifest, ctx, ctx.manifestRelations || []),
+  );
+}
+
+/**
+ * `Map<labSlug, postgresSchema>` for every Lab of the application. Hyphens and
+ * any other unsupported characters are normalized to underscores so that
+ * `supply-chain` becomes `supply_chain`. Two Labs whose slugs normalize to the
+ * same schema are rejected instead of silently sharing a schema.
+ */
+function buildLabSchemas(appManifests) {
+  const labSlugs = new Set(appManifests.map((manifest) => manifest.labSlug));
+  const schemas = new Map();
+  const owners = new Map();
+  for (const labSlug of [...labSlugs].sort()) {
+    const schema = schemaName(labSlug);
+    if (schema === PLATFORM_SCHEMA) {
+      throw new Error(
+        "Lab `" +
+          labSlug +
+          "` would map to the PostgreSQL schema `" +
+          PLATFORM_SCHEMA +
+          "`, which is reserved for the Chemicalist platform. Rename the Lab.",
+      );
+    }
+    if (owners.has(schema)) {
+      throw new Error(
+        "Labs `" +
+          owners.get(schema) +
+          "` and `" +
+          labSlug +
+          "` both map to the PostgreSQL schema `" +
+          schema +
+          "`. Lab slugs must stay unique after normalization.",
+      );
+    }
+    owners.set(schema, labSlug);
+    schemas.set(labSlug, schema);
+  }
+  return schemas;
+}
+
+/**
+ * PostgreSQL schema of a model. Platform models stay in `public`; every
+ * Studio model belongs to its Lab's schema.
+ */
+function schemaForModel(ctx, modelName) {
+  for (const manifest of ctx.appManifests || []) {
+    if (manifest.models.some((model) => model.name === modelName)) {
+      return ctx.labSchemas.get(manifest.labSlug);
+    }
+  }
+  return PLATFORM_SCHEMA;
 }
 
 function buildStudioDescriptor(manifest, ctx, relations) {
@@ -443,6 +531,7 @@ function buildStudioDescriptor(manifest, ctx, relations) {
     manifest,
     lab: manifest.lab,
     labSlug: manifest.labSlug,
+    labSchema: ctx.labSchemas ? ctx.labSchemas.get(manifest.labSlug) : undefined,
     studio: manifest.studio,
     studioSlug: manifest.studioSlug,
     studioPascal: pascal(manifest.studio),
@@ -476,6 +565,9 @@ function describeStudioForRegistry(manifest, context) {
     uiTemplatePath: manifest.projectFiles.uiTemplatePath,
     catalogKey: manifest.catalogKey,
     catalogMetadata: manifest.catalogMetadata,
+    labSchema: context && context.labSchemas
+      ? context.labSchemas.get(manifest.labSlug)
+      : schemaName(manifest.labSlug),
     generatorVersion: context
       ? context.generatorVersion
       : DEFAULT_REGISTRY.generatorVersion,
@@ -489,7 +581,11 @@ function describeStudioForRegistry(manifest, context) {
 module.exports = {
   DEFAULT_REGISTRY,
   API_ROOT,
+  PLATFORM_SCHEMA,
   buildContext,
+  buildRegisteredStudios,
+  buildLabSchemas,
+  schemaForModel,
   describeStudioForRegistry,
   readRegistryFile,
   writeRegistryFile,

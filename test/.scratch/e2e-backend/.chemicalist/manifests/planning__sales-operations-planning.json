@@ -1,0 +1,35 @@
+{
+  "lab": "Planning",
+  "studio": "S&OP",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "PlanningSopCycle"
+  ],
+  "catalogKey": "planning/sales-operations-planning",
+  "catalogMetadata": {
+    "ownership": "Demand forecasts, supply and production plans, planned capacity, and approved S&OP cycles.",
+    "publicEvents": [
+      "DemandForecastPublished",
+      "SupplyPlanPublished",
+      "ProductionPlanPublished",
+      "CapacityPlanPublished",
+      "SOPCycleApproved"
+    ],
+    "dependencies": [
+      "sales-distribution",
+      "supply-chain",
+      "production",
+      "finance"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

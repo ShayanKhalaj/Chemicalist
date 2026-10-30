@@ -1,0 +1,31 @@
+{
+  "lab": "EHS",
+  "studio": "Emergency Preparedness",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "EhsEmergencyPlan"
+  ],
+  "catalogKey": "ehs/emergency-preparedness",
+  "catalogMetadata": {
+    "ownership": "Chemical safety, risk assessments, incidents, occupational exposure, environmental obligations, waste, and emergency readiness.",
+    "publicEvents": [
+      "SafetyIncidentReported",
+      "RiskAssessmentApproved",
+      "SafetyControlRequired",
+      "EnvironmentalLimitBreached",
+      "HazardousWasteDeclared",
+      "EmergencyPlanActivated"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

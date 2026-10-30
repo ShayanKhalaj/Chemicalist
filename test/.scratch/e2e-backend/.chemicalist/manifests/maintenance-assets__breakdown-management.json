@@ -1,0 +1,30 @@
+{
+  "lab": "Maintenance & Assets",
+  "studio": "Breakdown Management",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "MaintenanceAssetsEquipmentBreakdown"
+  ],
+  "catalogKey": "maintenance-assets/breakdown-management",
+  "catalogMetadata": {
+    "ownership": "Physical assets, maintenance plans, work orders, breakdowns, spare-parts requirements, facilities, utilities, and energy records.",
+    "publicEvents": [
+      "MaintenanceWorkOrderCreated",
+      "MaintenanceWorkStarted",
+      "MaintenanceWorkCompleted",
+      "AssetAvailabilityChanged",
+      "AssetFailureReported"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

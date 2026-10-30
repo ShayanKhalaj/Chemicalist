@@ -16,6 +16,7 @@
  */
 
 const { kebab, camel } = require("../engine/naming");
+const { buildRegisteredStudios } = require("../engine/context");
 const platform = require("../templates/backend/platform.templates");
 const runtime = require("../templates/backend/platform.runtime.templates");
 
@@ -41,10 +42,32 @@ function platformPermissionKeys() {
   );
 }
 
+/** Regular backend wiring of every Studio, sorted by key. */
+function registeredStudios(ctx) {
+  return ctx.registeredStudios || buildRegisteredStudios(ctx);
+}
+
+/** The same Studios in catalog (Lab, then Studio) declaration order. */
+function catalogStudios(ctx) {
+  const order = new Map(
+    (ctx.appManifests || []).map((manifest, index) => [
+      manifest.labSlug + "/" + manifest.studioSlug,
+      index,
+    ]),
+  );
+  return registeredStudios(ctx)
+    .slice()
+    .sort(
+      (a, b) =>
+        (order.get(a.labSlug + "/" + a.studioSlug) ?? 0) -
+        (order.get(b.labSlug + "/" + b.studioSlug) ?? 0),
+    );
+}
+
 /** Stable permission keys of every generated studio operation. */
 function businessPermissions(ctx) {
   const entries = [];
-  for (const manifest of ctx.appManifests) {
+  for (const manifest of catalogStudios(ctx)) {
     for (const model of manifest.models) {
       const base =
         manifest.labSlug + "." + manifest.studioSlug + "." + kebab(model.name);
@@ -94,7 +117,7 @@ function permissionCatalog(ctx) {
 
 function generatedReports(ctx) {
   const entries = [];
-  for (const manifest of ctx.appManifests) {
+  for (const manifest of catalogStudios(ctx)) {
     for (const model of manifest.models) {
       const delegate = camel(model.name);
       const key =

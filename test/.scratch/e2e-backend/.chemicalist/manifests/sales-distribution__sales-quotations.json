@@ -1,0 +1,30 @@
+{
+  "lab": "Sales & Distribution",
+  "studio": "Sales & Quotations",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "SalesDistributionSalesQuotation"
+  ],
+  "catalogKey": "sales-distribution/sales-quotations",
+  "catalogMetadata": {
+    "ownership": "Commercial customers, quotations, sales orders, sales pricing, distribution network, and customer service.",
+    "publicEvents": [
+      "SalesOrderConfirmed",
+      "SalesOrderCancelled",
+      "SalesOrderChanged",
+      "CustomerDeliveryRequested",
+      "SalesReturnRequested"
+    ],
+    "dependencies": [],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}

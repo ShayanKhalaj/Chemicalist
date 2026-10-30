@@ -15,11 +15,31 @@
  *    the tenant table itself), because tenancy is part of the platform.
  */
 
-const { snake, camel, constant, kebab } = require("../engine/naming");
+const { snake, camel, constant, kebab, pascal } = require("../engine/naming");
+const { PLATFORM_SCHEMA } = require("../engine/context");
 
 // ---------------------------------------------------------------------------
 // Prisma schema
 // ---------------------------------------------------------------------------
+
+/**
+ * Prisma name of an enum of a Lab-owned schema.
+ *
+ * Prisma declares one enum per schema, so the same shared enum (for example
+ * `StudioRecordStatus` from the Studio template) used by several Labs must be
+ * declared once per Lab schema. The name is prefixed with the Lab schema so
+ * every declaration is unique: `quality.StudioRecordStatus` becomes
+ * `QualityStudioRecordStatus`. Platform enums keep their plain name.
+ */
+function manifestEnumKey(schema, enumName) {
+  if (schema === PLATFORM_SCHEMA) return enumName;
+  return pascal(schema) + enumName;
+}
+
+/** Prisma enum type name of a Studio field, resolved for its owning Lab. */
+function prismaEnumType(field, schema) {
+  return manifestEnumKey(schema, field.enumName);
+}
 
 function prismaScalarType(field) {
   switch (field.baseType) {
@@ -49,8 +69,8 @@ function prismaScalarType(field) {
   }
 }
 
-function prismaFieldLine(field, database) {
-  let type = prismaScalarType(field);
+function prismaFieldLine(field, database, enumType) {
+  let type = enumType || prismaScalarType(field);
   if (field.isArray) type += "[]";
 
   const optional = prismaOptional(field);
@@ -102,6 +122,7 @@ function prismaFieldLine(field, database) {
 
     if (!existing) {
       if (typeof field.default === "string") {
+        // Prisma enum defaults are bare values (`@default(DRAFT)`).
         attributes.push(
           field.enumName
             ? "@default(" + field.default + ")"
@@ -764,21 +785,38 @@ function platformModelBlocks(ctx, schema) {
 }
 
 function generatePrismaSchema(ctx) {
-  const schema = ctx.persistence.schema;
-  const enumBlocks = ctx.enums.map(
-    (item) =>
+  const mongodb = ctx.persistence.database === "mongodb";
+  // Prisma cannot reference an enum across PostgreSQL schemas: an enum must
+  // live in a schema every model using it belongs to. Enums used by Studio
+  // models therefore live in the schema of their Lab; enums used only by
+  // platform models stay in `public`.
+  const enumSchemas = enumSchemaAssignments(ctx);
+  // Enums declared by more than one Lab are emitted once per Lab schema.
+  const enumDeclarations = [];
+  for (const item of ctx.enums) {
+    const schemas = new Set();
+    for (const [key, schema] of enumSchemas) {
+      if (key.endsWith(item.name) && key.length > item.name.length) schemas.add(schema);
+    }
+    if (schemas.size === 0) schemas.add(PLATFORM_SCHEMA);
+    for (const schema of [...schemas].sort()) {
+      enumDeclarations.push({ item, schema, name: manifestEnumKey(schema, item.name) });
+    }
+  }
+  const enumBlocks = enumDeclarations.map(({ item, schema: enumSchema, name }) => {
+    return (
       "enum " +
-      item.name +
+      name +
       " {\n" +
       item.values.map((value) => "  " + value).join("\n") +
-      (ctx.persistence.database === "mongodb"
-        ? ""
-        : '\n  @@schema("' + schema + '")') +
-      "\n}",
-  );
+      (mongodb ? "" : '\n  @@schema("' + enumSchema + '")') +
+      "\n}"
+    );
+  });
 
   const modelBlocks = [];
   for (const manifest of ctx.appManifests) {
+    const modelSchema = labSchema(ctx, manifest.labSlug);
     for (const model of manifest.models) {
       const lines = ["model " + model.name + " {"];
       lines.push(
@@ -794,7 +832,13 @@ function generatePrismaSchema(ctx) {
       );
 
       for (const field of model.writableFields) {
-        lines.push(prismaFieldLine(field, ctx.persistence.database));
+        lines.push(
+          prismaFieldLine(
+            field,
+            ctx.persistence.database,
+            field.enumName ? prismaEnumType(field, modelSchema) : undefined,
+          ),
+        );
       }
 
       // Object side of every reference (Prisma requires both sides).
@@ -830,22 +874,23 @@ function generatePrismaSchema(ctx) {
         lines.push("  " + collection.field + " " + collection.to + "[]");
       }
 
+      const fieldIndexes = uniqueIndexDeclarations(model.writableFields);
       lines.push(
         "  deletedAt DateTime?",
         "  createdAt DateTime @default(now())",
         "  updatedAt DateTime @updatedAt",
         "",
         "  @@index([tenantId])",
+        ...fieldIndexes,
         '  @@map("' + snake(model.name) + '")',
-        ...(ctx.persistence.database === "mongodb"
-          ? []
-          : ['  @@schema("' + schema + '")']),
+        ...(mongodb ? [] : ['  @@schema("' + modelSchema + '")']),
         "}",
       );
       modelBlocks.push(lines.join("\n"));
     }
   }
 
+  const schemas = prismaSchemas(ctx);
   return [
     "// Prisma schema generated from the registered Chemicalist manifests.",
     "// Managed by the generator: edit manifests, then re-run `chemicalist generate`.",
@@ -855,13 +900,16 @@ function generatePrismaSchema(ctx) {
     "}",
     "",
     "datasource db {",
-    '  provider = "' +
-      (ctx.persistence.database === "mongodb" ? "mongodb" : "postgresql") +
-      '"',
+    '  provider = "' + (mongodb ? "mongodb" : "postgresql") + '"',
     '  url      = env("DATABASE_URL")',
-    ...(ctx.persistence.database === "mongodb"
+    // Prisma only accepts a single-line array literal in a datasource.
+    ...(mongodb
       ? []
-      : ['  schemas  = ["' + schema + '"]']),
+      : [
+          "  schemas  = [" +
+            schemas.map((name) => '"' + name + '"').join(", ") +
+            "]",
+        ]),
     "}",
     "",
     ...enumBlocks,
@@ -872,15 +920,69 @@ function generatePrismaSchema(ctx) {
     "// Platform tables: identity, tenancy, audit, notification, files, workflow,",
     "// module registry, flags, search, integration and optional messaging.",
     "// ---------------------------------------------------------------------------",
-    ...platformModelBlocks(ctx, schema),
+    ...platformModelBlocks(ctx, ctx.platformSchema || "public"),
   ].join("\n");
+}
+
+/** PostgreSQL schema of a Lab (one schema per Lab, never per Studio). */
+function labSchema(ctx, labSlug) {
+  const schemas = ctx.labSchemas || new Map();
+  const schema = schemas.get(labSlug);
+  if (!schema) {
+    throw new Error(
+      "Lab `" +
+        labSlug +
+        "` has no PostgreSQL schema. Regenerate the application so every registered Lab is discovered.",
+    );
+  }
+  return schema;
+}
+
+/** Every schema declared on the datasource: `public` first, then Lab schemas. */
+function prismaSchemas(ctx) {
+  const platform = ctx.platformSchema || "public";
+  const labs = [...(ctx.labSchemas || new Map()).values()]
+    .filter((schema) => schema !== platform)
+    .sort();
+  return [platform, ...labs];
+}
+
+/**
+ * `Map<manifestEnumKey, postgresSchema>` (see {@link manifestEnumKey}).
+ *
+ * Prisma enums in multi-schema PostgreSQL: an enum must be declared in a
+ * schema of the datasource. Enums used by Studio models are declared in the
+ * schema of their Lab; enums no Studio model uses are platform enums and stay
+ * in `public`.
+ */
+function enumSchemaAssignments(ctx) {
+  const owners = new Map();
+  for (const manifest of ctx.appManifests || []) {
+    const schema = labSchema(ctx, manifest.labSlug);
+    for (const item of manifest.enums || []) {
+      const key = manifestEnumKey(schema, item.name);
+      if (!owners.has(key)) owners.set(key, schema);
+    }
+  }
+  return owners;
+}
+
+/**
+ * Model-level indexes for `index: true` fields.
+ * Prisma has no field-level `@index`, and `@unique` already creates an index,
+ * so unique fields are never emitted again as `@@index`.
+ */
+function uniqueIndexDeclarations(fields) {
+  return fields
+    .filter((field) => field.index && !field.unique)
+    .map((field) => "  @@index([" + field.name + "])");
 }
 
 // ---------------------------------------------------------------------------
 // Persistence model + mapper
 // ---------------------------------------------------------------------------
 
-function persistenceFieldType(field) {
+function persistenceFieldType(field, enumType) {
   switch (field.baseType) {
     case "uuid":
     case "string":
@@ -899,7 +1001,7 @@ function persistenceFieldType(field) {
     case "json":
       return "Prisma.JsonValue";
     case "enum":
-      return "Prisma" + field.enumName;
+      return "Prisma" + (enumType || field.enumName);
     default:
       return "unknown";
   }
@@ -929,9 +1031,13 @@ function generatePersistenceModel(ctx, model) {
     );
   }
   lines.push(...relatedImports);
+  const schema = model.manifest
+    ? labSchema(ctx, model.manifest.labSlug)
+    : ctx.platformSchema || PLATFORM_SCHEMA;
+  // Prisma enum types of this Lab's schema (`QualityStudioRecordStatus`).
   const enums = new Set();
   for (const field of model.writableFields) {
-    if (field.enumName) enums.add(field.enumName);
+    if (field.enumName) enums.add(prismaEnumType(field, schema));
   }
   if (enums.size) {
     lines.push(
@@ -951,7 +1057,10 @@ function generatePersistenceModel(ctx, model) {
   );
 
   for (const field of model.writableFields) {
-    const type = persistenceFieldType(field);
+    const type = persistenceFieldType(
+      field,
+      field.enumName ? prismaEnumType(field, schema) : undefined,
+    );
     const array = field.isArray ? "[]" : "";
     const nullable =
       !field.isArray && (field.nullable || field.optional) ? " | null" : "";
@@ -1138,11 +1247,16 @@ function generateRepository(ctx, model) {
     : "never";
   const customMethodLines = [];
   const customMethodEnums = new Set();
+  const modelSchema = model.manifest
+    ? labSchema(ctx, model.manifest.labSlug)
+    : ctx.platformSchema || PLATFORM_SCHEMA;
   for (const custom of model.customMethods) {
     const parameters = custom.fields
       .map((name) => {
         const field = model.writableFields.find((candidate) => candidate.name === name);
-        if (field.baseType === "enum") customMethodEnums.add(field.enumName);
+        if (field.baseType === "enum") {
+          customMethodEnums.add(prismaEnumType(field, modelSchema));
+        }
         return name + ": " + repositoryFieldType(field);
       })
       .join(", ");
@@ -1153,7 +1267,9 @@ function generateRepository(ctx, model) {
           name +
           ": " +
           name +
-          (field.baseType === "enum" ? " as Prisma" + field.enumName : "")
+          (field.baseType === "enum"
+            ? " as Prisma" + prismaEnumType(field, modelSchema)
+            : "")
         );
       })
       .join(", ");

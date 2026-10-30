@@ -1,0 +1,33 @@
+{
+  "lab": "EHS",
+  "studio": "Industrial Hygiene",
+  "manifestPath": "C:\\Users\\Lenovo\\Desktop\\chemicalist\\gen\\manifests\\chemicalist.manifest.json",
+  "models": [
+    "EhsExposureAssessment"
+  ],
+  "catalogKey": "ehs/industrial-hygiene",
+  "catalogMetadata": {
+    "ownership": "Chemical safety, risk assessments, incidents, occupational exposure, environmental obligations, waste, and emergency readiness.",
+    "publicEvents": [
+      "SafetyIncidentReported",
+      "RiskAssessmentApproved",
+      "SafetyControlRequired",
+      "EnvironmentalLimitBreached",
+      "HazardousWasteDeclared",
+      "EmergencyPlanActivated"
+    ],
+    "dependencies": [
+      "human-resources"
+    ],
+    "maturity": "starter"
+  },
+  "capabilities": [
+    "tenantScope",
+    "cache",
+    "messaging",
+    "outbox",
+    "inbox",
+    "saga"
+  ],
+  "generatorVersion": "2.0.0"
+}
