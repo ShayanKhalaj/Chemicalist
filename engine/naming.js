@@ -53,8 +53,8 @@ function snake(value) {
 }
 
 /**
- * `supply-chain` -> `supply_chain` (PostgreSQL schema name of a Lab).
- * Every Lab owns exactly one schema; Studio slugs never take part in it.
+ * `demand-planning` -> `demand_planning` (PostgreSQL schema name of a Studio).
+ * Every Studio owns exactly one schema derived from its `studioSlug`.
  */
 function schemaName(value) {
   return snake(value).replace(/[^a-z0-9_]/g, '_');

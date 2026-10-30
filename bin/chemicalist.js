@@ -240,37 +240,52 @@ function frontendBootstrapped(frontendRoot) {
  * @param {object} io
  * @param {{ frontend?: "none"|"bootstrap"|"studios" }} modeWhich
  */
+
 function runGenerate(options, io, modeWhich = {}) {
   if (options.manifests.length === 0) {
     throw usageError("generate requires at least one manifest path");
   }
 
-  // Validate everything before touching the filesystem: a broken manifest must
-  // never leave a half-generated application behind.
+  // Validate every input manifest before touching the filesystem.
   const manifests = options.manifests.flatMap((manifestPath) =>
     loadAndValidateManifests(path.resolve(manifestPath), undefined, {
       overrides: options.overrides,
     }),
   );
 
+  if (manifests.length === 0) {
+    throw usageError("No studios were found in the supplied manifests");
+  }
+
   const first = manifests[0];
-  // Three separate responsibilities: the generator CLI, the backend project and
-  // the frontend project. The generator never writes UI files into the backend.
+
+  // Backend and frontend are separate projects.
   const outRoot = path.resolve(
     options.out || first.app.outDir || "chemicalist.backend",
   );
+
   const frontendOutRoot = path.resolve(
     options.frontendOut || "chemicalist.frontend",
   );
 
-  // A studio-only run must never (re)create the frontend project.
+  // A studio-only run must never recreate an existing frontend scaffold.
   let frontendMode = modeWhich.frontend || "none";
-  if (frontendMode === "studios" && !frontendBootstrapped(frontendOutRoot)) {
+
+  if (
+    frontendMode === "studios" &&
+    !frontendBootstrapped(frontendOutRoot)
+  ) {
     frontendMode = "bootstrap";
   }
 
-  const registryPath = path.join(outRoot, ".chemicalist", "registry.json");
+  const registryPath = path.join(
+    outRoot,
+    ".chemicalist",
+    "registry.json",
+  );
+
   const registry = readRegistryFile(registryPath);
+
   const nextRegistry = {
     ...DEFAULT_REGISTRY,
     ...registry,
@@ -282,25 +297,59 @@ function runGenerate(options, io, modeWhich = {}) {
       api: first.app.api,
       ui: first.ui,
     },
-    studios: { ...registry.studios },
+    studios: {
+      ...(registry.studios || {}),
+    },
   };
 
   const { plan } = require("../engine");
-  const outputPlan = new OutputPlan(outRoot, { frontendRoot: frontendOutRoot });
+  const outputPlan = new OutputPlan(outRoot, {
+    frontendRoot: frontendOutRoot,
+  });
+
   const notes = [];
   const generated = [];
 
-  // Generate every manifest in the same application context so app-wide files
-  // (Prisma schema, app module, frontend routes) stay consistent.
+  // ---------------------------------------------------------
+  // Phase 1: Register every input Studio before building any
+  // generation context.
+  //
+  // This is essential because app-wide files such as
+  // schema.prisma are generated only once.
+  // ---------------------------------------------------------
+
+  const descriptors = new Map();
+
   for (const manifest of manifests) {
+    const descriptor = describeStudioForRegistry(manifest);
+
+    nextRegistry.studios[descriptor.key] = descriptor;
+    descriptors.set(manifest, descriptor);
+  }
+
+  // ---------------------------------------------------------
+  // Phase 2: Generate Studio files.
+  //
+  // Every context now receives the complete Registry, including
+  // all existing Studios and all Studios in the current input.
+  //
+  // The first context therefore contains every application
+  // manifest and can generate the complete Prisma schema.
+  // ---------------------------------------------------------
+
+  for (const manifest of manifests) {
+    const descriptor = descriptors.get(manifest);
+
     const ctx = buildContext(manifest, nextRegistry.studios, {
       generatorVersion: pkg.version,
       registryPath,
     });
-    const descriptor = describeStudioForRegistry(manifest, ctx);
-    nextRegistry.studios[descriptor.key] = descriptor;
 
-    plan(ctx, outputPlan, { notes, frontend: frontendMode });
+    plan(ctx, outputPlan, {
+      notes,
+      frontend: frontendMode,
+    });
+
     generated.push({
       lab: manifest.lab,
       studio: manifest.studio,
@@ -309,15 +358,29 @@ function runGenerate(options, io, modeWhich = {}) {
     });
   }
 
-  // One plan for both projects; the writer routes each file to its own root.
+  // ---------------------------------------------------------
+  // Phase 3: Classify and apply all planned files.
+  // ---------------------------------------------------------
+
   const writer = require("../engine/writer");
-  const planned = writer.plan(outRoot, outputPlan, { force: options.force });
+
+  const planned = writer.plan(outRoot, outputPlan, {
+    force: options.force,
+  });
+
   const allApplied = options.dryRun
     ? planned.results
     : writer.apply(outRoot, planned);
-  const applied = allApplied.filter((file) => file.scope !== "frontend");
-  const frontendApplied = allApplied.filter((file) => file.scope === "frontend");
 
+  const applied = allApplied.filter(
+    (file) => file.scope !== "frontend",
+  );
+
+  const frontendApplied = allApplied.filter(
+    (file) => file.scope === "frontend",
+  );
+
+  // Persist Registry only after successful generation.
   if (!options.dryRun) {
     writeRegistryFile(registryPath, nextRegistry);
     writeStudioManifests(outRoot, nextRegistry);
@@ -325,18 +388,24 @@ function runGenerate(options, io, modeWhich = {}) {
 
   const summary = writer.summarize(applied);
   const frontendSummary = writer.summarize(frontendApplied);
+
   const studioSummary = generated.map((entry) => {
     const owned = applied.filter(
       (file) =>
         outputPlan.files.has("backend:" + file.path) &&
         outputPlan.files.get("backend:" + file.path).studio === entry.key,
     );
+
     const ownedFrontend = frontendApplied.filter(
       (file) =>
         outputPlan.files.has("frontend:" + file.path) &&
         outputPlan.files.get("frontend:" + file.path).studio === entry.key,
     );
-    const counts = writer.summarize(owned.concat(ownedFrontend));
+
+    const counts = writer.summarize(
+      owned.concat(ownedFrontend),
+    );
+
     return {
       key: entry.key,
       models: entry.models.length,
@@ -352,6 +421,10 @@ function runGenerate(options, io, modeWhich = {}) {
     };
   });
 
+  // ---------------------------------------------------------
+  // Phase 4: JSON output.
+  // ---------------------------------------------------------
+
   if (options.json) {
     io.log(
       JSON.stringify(
@@ -364,7 +437,10 @@ function runGenerate(options, io, modeWhich = {}) {
           frontendFiles: frontendSummary,
           changes: applied
             .filter((file) => file.status !== "unchanged")
-            .map((file) => ({ path: file.path, status: file.status }))
+            .map((file) => ({
+              path: file.path,
+              status: file.status,
+            }))
             .concat(
               frontendApplied
                 .filter((file) => file.status !== "unchanged")
@@ -376,7 +452,10 @@ function runGenerate(options, io, modeWhich = {}) {
             ),
           conflicts: applied
             .filter((file) => file.status === "conflict")
-            .map((file) => ({ path: file.path, reason: file.reason }))
+            .map((file) => ({
+              path: file.path,
+              reason: file.reason,
+            }))
             .concat(
               frontendApplied
                 .filter((file) => file.status === "conflict")
@@ -392,10 +471,16 @@ function runGenerate(options, io, modeWhich = {}) {
       ),
     );
   } else {
+    // -------------------------------------------------------
+    // Phase 5: Human-readable output.
+    // -------------------------------------------------------
+
     if (!options.quiet) {
       for (const file of applied) {
         if (file.status === "unchanged") continue;
+
         const label = file.status.toUpperCase().padEnd(11);
+
         io.log(
           "  " +
             label +
@@ -403,11 +488,15 @@ function runGenerate(options, io, modeWhich = {}) {
             (file.reason ? "  (" + file.reason + ")" : ""),
         );
       }
+
       if (frontendApplied.length) {
         io.log("  -- frontend project: " + frontendOutRoot);
+
         for (const file of frontendApplied) {
           if (file.status === "unchanged") continue;
+
           const label = file.status.toUpperCase().padEnd(11);
+
           io.log(
             "  " +
               label +
@@ -416,9 +505,14 @@ function runGenerate(options, io, modeWhich = {}) {
           );
         }
       }
-      for (const note of notes) io.log("  note: " + note);
+
+      for (const note of notes) {
+        io.log("  note: " + note);
+      }
+
       io.log("");
     }
+
     io.log(
       (options.dryRun ? "DRY RUN — " : "") +
         "Generated " +
@@ -435,6 +529,7 @@ function runGenerate(options, io, modeWhich = {}) {
         relativeToCwd(frontendOutRoot) +
         ")",
     );
+
     for (const entry of studioSummary) {
       io.log(
         "  " +
@@ -452,6 +547,7 @@ function runGenerate(options, io, modeWhich = {}) {
           " unchanged)",
       );
     }
+
     io.log(
       "  total: " +
         summary.created +
@@ -463,6 +559,7 @@ function runGenerate(options, io, modeWhich = {}) {
         summary.conflict +
         " conflict(s)",
     );
+
     if (frontendApplied.length) {
       io.log(
         "  frontend total: " +
@@ -476,6 +573,7 @@ function runGenerate(options, io, modeWhich = {}) {
           " conflict(s)",
       );
     }
+
     if (summary.conflict + frontendSummary.conflict > 0) {
       io.log("");
       io.log(
@@ -489,9 +587,15 @@ function runGenerate(options, io, modeWhich = {}) {
       io.log("            copy .env.example .env   # then set DATABASE_URL");
       io.log(
         "            npm run db:generate && npm run " +
-          (first.persistence.database === "mongodb" ? "db:push" : "db:migrate"),
+          (first.persistence.database === "mongodb"
+            ? "db:push"
+            : "db:migrate"),
       );
-      io.log("            npm run start:dev        # API on " + apiUrl(first));
+      io.log(
+        "            npm run start:dev        # API on " +
+          apiUrl(first),
+      );
+
       if (frontendApplied.length) {
         io.log("  frontend: cd " + relativeToCwd(frontendOutRoot));
         io.log("            npm install");
@@ -505,10 +609,17 @@ function runGenerate(options, io, modeWhich = {}) {
       summary.conflict + frontendSummary.conflict > 0
         ? EXIT.CONFLICT
         : EXIT.OK,
-    backend: { dir: outRoot, summary },
-    frontend: { dir: frontendOutRoot, summary: frontendSummary },
+    backend: {
+      dir: outRoot,
+      summary,
+    },
+    frontend: {
+      dir: frontendOutRoot,
+      summary: frontendSummary,
+    },
   };
 }
+
 
 /**
  * Initial application bootstrap: creates the backend project and the frontend
