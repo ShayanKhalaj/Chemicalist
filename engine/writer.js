@@ -1,0 +1,318 @@
+"use strict";
+
+/**
+ * Safe file writer.
+ *
+ * Ownership model:
+ *  - Comment-capable files use a language-appropriate ownership marker;
+ *    plain-text files are tracked by their hash in .chemicalist/state.json.
+ *  - A generator-owned file is overwritten only when its content changed since
+ *    the last generation. Manual edits are reported as conflicts unless
+ *    `--force` is given.
+ *  - Files without the marker are never overwritten (conflict, or preserved
+ *    application-owned files).
+ *  - Every path is normalized and must stay inside the output directory.
+ */
+
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
+
+const { GENERATED_MARKER } = require("./app-model");
+
+const STATE_DIR = ".chemicalist";
+const STATE_FILE = STATE_DIR + "/state.json";
+
+/** Marks a one-time bootstrap file (written once, then never rewritten). */
+const SCAFFOLD_FLAG = Symbol.for("chemicalist.frontend.scaffold");
+const PRESERVED_OWNER = "scaffold";
+
+class OutputPlan {
+  /**
+   * @param {string} root backend (API) project directory
+   * @param {{ frontendRoot?: string }} [options] separate frontend project;
+   *   {@link OutputPlan#forFrontend} returns a plan rooted there.
+   */
+  constructor(root, options = {}) {
+    this.root = path.resolve(root);
+    this.scope = "backend";
+    this.frontendRoot = options.frontendRoot
+      ? path.resolve(options.frontendRoot)
+      : null;
+    // `forFrontend()` views share the file registry of their parent plan, so a
+    // single plan holds backend and frontend files (each with its own root).
+    this.files = options.files || new Map();
+  }
+
+  /**
+   * The frontend is a separate project directory; its files are written there
+   * with their own state file.
+   */
+  forFrontend() {
+    if (this._frontendView) return this._frontendView;
+    const routed = new OutputPlan(this.frontendRoot || this.root, {
+      files: this.files,
+    });
+    routed.scope = "frontend";
+    this._frontendView = routed;
+    return routed;
+  }
+
+  add(relativePath, content, meta = {}) {
+    const normalized = normalizeRelative(this.root, relativePath);
+    const key = (this.scope === "frontend" ? "frontend:" : "backend:") + normalized;
+    if (this.files.has(key)) {
+      throw new Error("Two generators produced the same file: " + normalized);
+    }
+    const body = String(content).replace(/\r\n/g, "\n").trimEnd() + "\n";
+    this.files.set(key, {
+      path: normalized,
+      content: body,
+      owner: meta[SCAFFOLD_FLAG] ? PRESERVED_OWNER : meta.owner || "generator",
+      studio: meta.studio,
+      scope: this.scope,
+    });
+    return normalized;
+  }
+
+  json(relativePath, value, meta) {
+    this.add(relativePath, JSON.stringify(value, null, 2), meta);
+  }
+
+  /**
+   * A file that is app-owned but contains generator-owned blocks.
+   * The existing content (if any) is patched instead of replaced.
+   */
+  addOwned(relativePath, patch) {
+    const normalized = normalizeRelative(this.root, relativePath);
+    this.owned = this.owned || new Map();
+    this.owned.set(normalized, patch);
+  }
+
+  sorted() {
+    return [...this.files.values()].sort((a, b) =>
+      a.path < b.path ? -1 : a.path > b.path ? 1 : 0,
+    );
+  }
+}
+
+function normalizeRelative(root, relativePath) {
+  if (typeof relativePath !== "string" || relativePath.length === 0) {
+    throw new Error("Invalid output path: " + String(relativePath));
+  }
+  if (path.isAbsolute(relativePath) || /^[A-Za-z]:/.test(relativePath)) {
+    throw new Error(
+      "Output paths added by generators must be relative: " + relativePath,
+    );
+  }
+  const forward = relativePath.split("\\").join("/");
+  const segments = forward.split("/");
+  if (
+    segments.some(
+      (segment) => segment === ".." || segment === "" || segment === ".",
+    )
+  ) {
+    throw new Error("Unsafe output path (path traversal): " + relativePath);
+  }
+  const target = path.resolve(root, forward);
+  if (target !== root && !target.startsWith(root + path.sep)) {
+    throw new Error(
+      "Output path escapes the output directory: " + relativePath,
+    );
+  }
+  return forward;
+}
+
+function sha256(content) {
+  return crypto.createHash("sha256").update(content, "utf8").digest("hex");
+}
+
+function readState(root) {
+  const file = path.join(root, STATE_FILE);
+  if (!fs.existsSync(file)) return { version: 1, files: {} };
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return { version: 1, files: parsed.files || {} };
+  } catch {
+    // A corrupt state file must not block generation; treat everything as stale.
+    return { version: 1, files: {}, corrupt: true };
+  }
+}
+
+function generatedMarker(relativePath) {
+  const basename = path.basename(relativePath).toLowerCase();
+  if (basename.endsWith(".json") || basename === "robots.txt") return null;
+  if (basename.endsWith(".html")) return "<!-- @generated by chemicalist-generator -->";
+  if (basename.endsWith(".css")) return "/* @generated by chemicalist-generator */";
+  if (
+    basename === ".gitignore" ||
+    basename === ".dockerignore" ||
+    basename === "dockerfile" ||
+    basename.endsWith(".yml") ||
+    basename.endsWith(".yaml") ||
+    basename.startsWith(".env")
+  ) {
+    return "# @generated by chemicalist-generator";
+  }
+  return GENERATED_MARKER;
+}
+
+function isGeneratedContent(relativePath, content) {
+  const marker = generatedMarker(relativePath);
+  if (!marker) return false;
+  return content
+    .replace(/^\uFEFF/, "")
+    .trimStart()
+    .startsWith(marker);
+}
+
+function withMarker(relativePath, content) {
+  const marker = generatedMarker(relativePath);
+  if (!marker) return content;
+  return marker + "\n\n" + content;
+}
+
+/**
+ * Classify every planned file without touching the filesystem.
+ * @returns {{results: Array, state: object}}
+ */
+function plan(root, outputPlan, options = {}) {
+  const state = readState(root);
+  const results = [];
+
+  for (const file of outputPlan.sorted()) {
+    // A shared plan holds backend and frontend files; each is classified
+    // against the root of its own project directory.
+    const fileRoot = file.scope === "frontend" ? outputPlan.root : root;
+    const absolute = path.join(fileRoot, file.path);
+    const markedContent = withMarker(file.path, file.content);
+    const entry = {
+      path: file.path,
+      scope: file.scope,
+      status: "created",
+      reason: undefined,
+      content: markedContent,
+    };
+
+    if (!fs.existsSync(absolute)) {
+      entry.status = "created";
+    } else {
+      const existing = fs.readFileSync(absolute, "utf8");
+      const same = existing.replace(/\r\n/g, "\n") === markedContent;
+
+      if (same) {
+        entry.status = "unchanged";
+      } else if (file.owner === PRESERVED_OWNER) {
+        // One-time scaffold (e.g. the frontend project skeleton): existing
+        // files are never rewritten, not even with --force.
+        entry.status = "preserved";
+        entry.reason = "existing bootstrap scaffold is preserved";
+      } else {
+        const previous = state.files[file.path];
+        const untouchedSinceLastGeneration =
+          previous && previous.hash === sha256(existing);
+        const hasGeneratedMarker = isGeneratedContent(file.path, existing);
+        if (!hasGeneratedMarker && !options.force && !untouchedSinceLastGeneration) {
+          entry.status = "conflict";
+          entry.reason =
+            "existing file is not generator-owned (manually maintained)";
+          results.push(entry);
+          continue;
+        }
+        const acceptable =
+          options.force ||
+          untouchedSinceLastGeneration ||
+          (!previous && !options.preserveOrphans);
+        if (acceptable) {
+          entry.status = "updated";
+        } else {
+          entry.status = "conflict";
+          entry.reason =
+            "generator-owned file was modified manually since the last generation";
+        }
+      }
+    }
+
+    results.push(entry);
+  }
+
+  // App-owned files with generated blocks: classified by content diff only.
+  for (const [relativePath, patch] of (outputPlan.owned || new Map())) {
+    const absolute = path.join(root, relativePath);
+    const existing = fs.existsSync(absolute) ? fs.readFileSync(absolute, 'utf8').replace(/\r\n/g, '\n') : null;
+    const result = patch(existing);
+    const content = existing ? result.content : '// @generated by chemicalist-generator\n\n' + result.content;
+    let status;
+    if (existing === null) status = 'created';
+    else if (existing === content) status = 'unchanged';
+    else status = 'updated';
+    results.push({ path: relativePath, status, content });
+  }
+
+  return { results, state, frontendRoot: outputPlan.frontendRoot };
+}
+
+function apply(root, planned, options = {}) {
+  const nextState = {
+    version: 1,
+    files: { ...planned.state.files },
+    corrupt: planned.state.corrupt,
+  };
+  const applied = [];
+
+  for (const entry of planned.results) {
+    if (entry.status === "preserved" || entry.status === "skipped") {
+      // Written by an earlier generation; left exactly as it is.
+      continue;
+    }
+    if (entry.status === "unchanged" || entry.status === "conflict") {
+      applied.push(entry);
+      continue;
+    }
+    const projectRoot =
+      entry.scope === "frontend" && planned.frontendRoot
+        ? planned.frontendRoot
+        : root;
+    const absolute = path.join(projectRoot, entry.path);
+    fs.mkdirSync(path.dirname(absolute), { recursive: true });
+    fs.writeFileSync(absolute, entry.content, "utf8");
+    nextState.files[entry.path] = { hash: sha256(entry.content) };
+    applied.push(entry);
+  }
+
+  fs.mkdirSync(path.join(root, STATE_DIR), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, STATE_FILE),
+    JSON.stringify(nextState, null, 2) + "\n",
+    "utf8",
+  );
+
+  return applied;
+}
+
+function summarize(results) {
+  const summary = {
+    created: 0,
+    updated: 0,
+    unchanged: 0,
+    conflict: 0,
+    overwritten: 0,
+    skipped: 0,
+    preserved: 0,
+  };
+  for (const entry of results)
+    summary[entry.status] = (summary[entry.status] || 0) + 1;
+  return summary;
+}
+
+module.exports = {
+  OutputPlan,
+  SCAFFOLD_FLAG,
+  STATE_FILE,
+  normalizeRelative,
+  plan,
+  apply,
+  summarize,
+  readState,
+  sha256,
+};

@@ -1,0 +1,18 @@
+{
+  "persistence": {
+    "provider": "prisma",
+    "database": "postgres",
+    "schema": "public"
+  },
+  "capabilities": {
+    "unitOfWork": true,
+    "outbox": true,
+    "inbox": true,
+    "saga": true,
+    "cache": true,
+    "messaging": true
+  },
+  "services": {
+    "elasticsearch": false
+  }
+}

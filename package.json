@@ -1,0 +1,29 @@
+{
+  "name": "chemicalist",
+  "version": "2.0.0",
+  "description": "Manifest-driven generator for Chemicalist modular-monolith NestJS backends with a Next.js admin UI",
+  "license": "UNLICENSED",
+  "private": true,
+  "bin": {
+    "chemicalist": "bin/chemicalist.js"
+  },
+  "main": "engine/index.js",
+  "files": [
+    "bin",
+    "engine",
+    "generators",
+    "templates",
+    "manifests",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "validate:example": "node bin/chemicalist.js validate manifests/example.manifest.json",
+    "generate:example": "node bin/chemicalist.js generate manifests/example.manifest.json --out ../chemicalist.backend",
+    "bootstrap": "node bin/chemicalist.js init manifests/example.manifest.json",
+    "link:global": "npm link"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
