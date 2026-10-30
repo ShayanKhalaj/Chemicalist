@@ -23,6 +23,7 @@ const PLATFORM_PERMISSIONS = [
   ["platform.identity", ["read", "write"]],
   ["platform.authorization", ["read", "write"]],
   ["platform.audit", ["read"]],
+  ["platform.location", ["read", "write"]],
   ["platform.tenant", ["read", "write"]],
   ["platform.notification", ["read", "write"]],
   ["platform.files", ["read", "write"]],
@@ -199,6 +200,12 @@ function addPlatform(plan, ctx) {
   add("src/platform/audit/audit.interceptor.ts", audit.interceptor);
   add("src/platform/audit/audit.controller.ts", audit.controller);
   add("src/platform/audit/audit.module.ts", audit.module);
+
+  // ------------------------------------------------------------ locations
+  const locations = runtime.locationFiles();
+  add("src/platform/location/location.service.ts", locations.service);
+  add("src/platform/location/location.controller.ts", locations.controller);
+  add("src/platform/location/location.module.ts", locations.module);
 
   // -------------------------------------------------------- notification
   const notification = runtime.notificationFiles();

@@ -136,6 +136,68 @@ test("patching a later generated block replaces it instead of appending duplicat
   assert.match(patched, /\n  \/\/ <\/chemicalist:block>/);
 });
 
+test("platform identity, auth, RBAC, audit, tenancy, and location are tenant-scoped", () => {
+  const { files } = generatedFiles(exampleManifest());
+  const backend = (relativePath) => {
+    const result = files.get("backend:" + relativePath);
+    assert.ok(result, "expected generated file " + relativePath);
+    return result.content;
+  };
+  const schema = backend("prisma/schema.prisma");
+  const identity = backend("src/platform/identity/identity.service.ts");
+  const identityController = backend("src/platform/identity/identity.controller.ts");
+  const authentication = backend("src/platform/security/jwt-auth.guard.ts");
+  const tokenService = backend("src/platform/security/token.service.ts");
+  const permissionGuard = backend("src/platform/authorization/permission.guard.ts");
+  const audit = backend("src/platform/audit/audit.service.ts");
+  const location = backend("src/platform/location/location.service.ts");
+  const locationController = backend("src/platform/location/location.controller.ts");
+  const tenancy = backend("src/platform/tenancy/tenancy.service.ts");
+  const platformModule = backend("src/platform/platform.module.ts");
+  const authService = backend("src/platform/security/auth/auth.service.ts");
+  const authController = backend("src/platform/security/auth/auth.controller.ts");
+  const envSchema = backend("src/platform/configuration/env.schema.ts");
+
+  assert.doesNotMatch(identityController, /isPlatformAdmin: z\.boolean/);
+  assert.match(identity, /isPlatformAdmin: false/);
+  assert.match(identity, /assertTenantAccess/);
+  assert.match(identity, /tenantId: user\.tenantId/);
+  assert.match(identity, /return role\.id;\s+}\s+\n\s+async createRole/);
+  assert.match(identity, /async revokeRoleGroup/);
+  assert.match(identity, /async replaceRoleGroupRoles/);
+  assert.match(identity, /async replacePermissionGroupPermissions/);
+  assert.match(identity, /SYSTEM_ROLE_GROUP_IMMUTABLE/);
+  assert.match(identity, /SYSTEM_PERMISSION_GROUP_IMMUTABLE/);
+  assert.match(identityController, /@Delete\('users\/:id\/role-groups\/:groupKey'\)/);
+  assert.match(identityController, /@Put\('role-groups\/:groupKey\/roles'\)/);
+  assert.match(identityController, /@Put\('permission-groups\/:groupKey\/permissions'\)/);
+  assert.match(identityController, /this\.tenantScope\(actor, requestedTenantId\)/);
+  assert.match(tokenService, /sid: sessionId/);
+  assert.match(authentication, /activeSessionIdentity\(claims\.sub, claims\.sid\)/);
+  assert.match(authentication, /INACTIVE_ACCOUNT_OR_SESSION/);
+  assert.doesNotMatch(permissionGuard, /if \(request\.user\.isPlatformAdmin\) return true/);
+  assert.match(authService, /replacedById: replacement\.id/);
+  assert.match(authService, /async logoutAll/);
+  assert.match(authController, /@Delete\('sessions\/:sessionId'\)/);
+  assert.match(authController, /@Post\('change-password'\)/);
+  assert.match(envSchema, /development-only-secret-change-before-deploy/);
+  assert.match(envSchema, /environment\.NODE_ENV === 'production'/);
+  assert.match(audit, /actor\.tenantId \?\? null/);
+  assert.match(tenancy, /Only platform administrators can create tenants/);
+  assert.match(location, /tenantId: this\.tenant\(actor\)/);
+  assert.match(location, /INVALID_LOCATION_HIERARCHY/);
+  assert.match(location, /chemicalistCountry\.findFirst/);
+  assert.match(location, /REGION_EXISTS/);
+  assert.match(location, /CITY_EXISTS/);
+  assert.match(locationController, /platform\.location:write/);
+  assert.match(locationController, /me\/addresses/);
+  assert.match(schema, /model ChemicalistCountry \{/);
+  assert.match(schema, /model ChemicalistRegion \{/);
+  assert.match(schema, /model ChemicalistCity \{/);
+  assert.match(schema, /model ChemicalistUserAddress \{/);
+  assert.equal((platformModule.match(/import \{ LocationModule \}/g) || []).length, 1);
+});
+
 test("MongoDB manifest output uses ObjectId and the UI template overrides theme tokens", () => {
   const file = path.join(__dirname, "..", "manifests", "example.manifest.json");
   const manifest = loadAndValidateManifest(file, undefined, {

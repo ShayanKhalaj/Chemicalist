@@ -30,7 +30,10 @@ export interface AuditQuery {
   limit?: number;
   action?: string;
   actorId?: string;
+  tenantId?: string;
 }
+
+import type { RequestIdentity } from '../../shared/context/request-context';
 
 /** Audit owner: append-only record of sensitive operations and authorizations. */
 @Injectable()
@@ -55,10 +58,13 @@ export class AuditService {
     });
   }
 
-  list(query: AuditQuery = {}) {
+  list(query: AuditQuery, actor: RequestIdentity) {
     const limit = Math.min(Math.max(query.limit ?? 100, 1), 500);
     return this.prisma.chemicalistAuditEntry.findMany({
       where: {
+        ...(actor.isPlatformAdmin
+          ? (query.tenantId ? { tenantId: query.tenantId } : {})
+          : { tenantId: actor.tenantId ?? null }),
         ...(query.action ? { action: query.action } : {}),
         ...(query.actorId ? { actorId: query.actorId } : {}),
       },
@@ -134,8 +140,10 @@ export class AuditInterceptor implements NestInterceptor {
   }
 }
 `,
-    controller: `import { Controller, Get, Query } from '@nestjs/common';
+    controller: `import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { RequirePermission } from '../authorization/permissions';
+import { CurrentIdentity } from '../security/current-identity.decorator';
+import type { RequestIdentity } from '../../shared/context/request-context';
 import { AuditService } from './audit.service';
 
 @Controller('platform/audit')
@@ -148,12 +156,18 @@ export class AuditController {
     @Query('limit') limit?: string,
     @Query('action') action?: string,
     @Query('actorId') actorId?: string,
+    @Query('tenantId') tenantId?: string,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
+    if (limit !== undefined && !/^\\d+$/.test(limit)) {
+      throw new BadRequestException({ code: 'INVALID_LIMIT', message: 'limit must be a positive integer' });
+    }
     return this.audit.list({
-      limit: limit ? Number(limit) : undefined,
+      limit: limit === undefined ? undefined : Number(limit),
       action,
       actorId,
-    });
+      tenantId,
+    }, actor);
   }
 }
 `,
@@ -171,6 +185,351 @@ import { AuditInterceptor } from './audit.interceptor';
   exports: [AuditService],
 })
 export class AuditModule {}
+`,
+  };
+}
+
+function locationFiles() {
+  return {
+    service: `import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import type { RequestIdentity } from '../../shared/context/request-context';
+
+type CountryInput = { code: string; name: string; nativeName?: string; phoneCode?: string };
+type RegionInput = { code: string; name: string };
+type CityInput = { code: string; name: string };
+type AddressInput = {
+  title: string;
+  countryId: string;
+  regionId: string;
+  cityId: string;
+  addressLine1: string;
+  addressLine2?: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+  isDefault?: boolean;
+};
+
+@Injectable()
+export class LocationService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private tenant(actor: RequestIdentity): string {
+    if (!actor.tenantId) {
+      throw new ForbiddenException({
+        code: 'TENANT_SCOPE_VIOLATION',
+        message: 'A tenant-scoped identity is required for location data',
+      });
+    }
+    return actor.tenantId;
+  }
+
+  listCountries(actor: RequestIdentity) {
+    return this.prisma.chemicalistCountry.findMany({
+      where: { tenantId: this.tenant(actor), isActive: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createCountry(input: CountryInput, actor: RequestIdentity) {
+    const tenantId = this.tenant(actor);
+    const code = input.code.trim().toUpperCase();
+    const existing = await this.prisma.chemicalistCountry.findFirst({
+      where: { tenantId, code },
+    });
+    if (existing) {
+      throw new BadRequestException({ code: 'COUNTRY_EXISTS', message: 'Country code already exists in this tenant' });
+    }
+    return this.prisma.chemicalistCountry.create({
+      data: { tenantId, ...input, code },
+    });
+  }
+
+  listRegions(countryId: string, actor: RequestIdentity) {
+    return this.prisma.chemicalistRegion.findMany({
+      where: { tenantId: this.tenant(actor), countryId, isActive: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createRegion(countryId: string, input: RegionInput, actor: RequestIdentity) {
+    const tenantId = this.tenant(actor);
+    const country = await this.prisma.chemicalistCountry.findFirst({
+      where: { id: countryId, tenantId, isActive: true },
+    });
+    if (!country) throw new NotFoundException({ code: 'COUNTRY_NOT_FOUND', message: 'Country not found' });
+    const code = input.code.trim();
+    const existing = await this.prisma.chemicalistRegion.findFirst({
+      where: { tenantId, countryId, code },
+    });
+    if (existing) {
+      throw new BadRequestException({
+        code: 'REGION_EXISTS',
+        message: 'Region code already exists in this country',
+      });
+    }
+    return this.prisma.chemicalistRegion.create({
+      data: { tenantId, countryId, ...input, code },
+    });
+  }
+
+  listCities(regionId: string, actor: RequestIdentity) {
+    return this.prisma.chemicalistCity.findMany({
+      where: { tenantId: this.tenant(actor), regionId, isActive: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createCity(regionId: string, input: CityInput, actor: RequestIdentity) {
+    const tenantId = this.tenant(actor);
+    const region = await this.prisma.chemicalistRegion.findFirst({
+      where: { id: regionId, tenantId, isActive: true },
+    });
+    if (!region) throw new NotFoundException({ code: 'REGION_NOT_FOUND', message: 'Region not found' });
+    const code = input.code.trim();
+    const existing = await this.prisma.chemicalistCity.findFirst({
+      where: { tenantId, regionId, code },
+    });
+    if (existing) {
+      throw new BadRequestException({
+        code: 'CITY_EXISTS',
+        message: 'City code already exists in this region',
+      });
+    }
+    return this.prisma.chemicalistCity.create({
+      data: { tenantId, regionId, ...input, code },
+    });
+  }
+
+  listMyAddresses(actor: RequestIdentity) {
+    return this.prisma.chemicalistUserAddress.findMany({
+      where: { tenantId: this.tenant(actor), userId: actor.userId, deletedAt: null },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  private async validateAddress(input: AddressInput, tenantId: string): Promise<void> {
+    const [country, region, city] = await Promise.all([
+      this.prisma.chemicalistCountry.findFirst({
+        where: {
+          id: input.countryId,
+          tenantId,
+          isActive: true,
+        },
+      }),
+      this.prisma.chemicalistRegion.findFirst({
+        where: {
+          id: input.regionId,
+          countryId: input.countryId,
+          tenantId,
+          isActive: true,
+        },
+      }),
+      this.prisma.chemicalistCity.findFirst({
+      where: {
+        id: input.cityId,
+        regionId: input.regionId,
+        tenantId,
+        isActive: true,
+      },
+      }),
+    ]);
+    if (!country || !region || !city) {
+      throw new BadRequestException({
+        code: 'INVALID_LOCATION_HIERARCHY',
+        message: 'The selected country, region, and city do not form an active location in this tenant',
+      });
+    }
+    if (
+      input.latitude !== undefined &&
+      (input.latitude < -90 || input.latitude > 90)
+    ) {
+      throw new BadRequestException({ code: 'INVALID_LATITUDE', message: 'Latitude must be between -90 and 90' });
+    }
+    if (
+      input.longitude !== undefined &&
+      (input.longitude < -180 || input.longitude > 180)
+    ) {
+      throw new BadRequestException({ code: 'INVALID_LONGITUDE', message: 'Longitude must be between -180 and 180' });
+    }
+  }
+
+  async createMyAddress(input: AddressInput, actor: RequestIdentity) {
+    const tenantId = this.tenant(actor);
+    await this.validateAddress(input, tenantId);
+    return this.prisma.$transaction(async (transaction) => {
+      if (input.isDefault) {
+        await transaction.chemicalistUserAddress.updateMany({
+          where: { tenantId, userId: actor.userId, deletedAt: null },
+          data: { isDefault: false },
+        });
+      }
+      return transaction.chemicalistUserAddress.create({
+        data: { ...input, tenantId, userId: actor.userId },
+      });
+    });
+  }
+
+  async updateMyAddress(id: string, input: AddressInput, actor: RequestIdentity) {
+    const tenantId = this.tenant(actor);
+    const existing = await this.prisma.chemicalistUserAddress.findFirst({
+      where: { id, tenantId, userId: actor.userId, deletedAt: null },
+    });
+    if (!existing) throw new NotFoundException({ code: 'ADDRESS_NOT_FOUND', message: 'Address not found' });
+    await this.validateAddress(input, tenantId);
+    return this.prisma.$transaction(async (transaction) => {
+      if (input.isDefault) {
+        await transaction.chemicalistUserAddress.updateMany({
+          where: { tenantId, userId: actor.userId, deletedAt: null, id: { not: id } },
+          data: { isDefault: false },
+        });
+      }
+      return transaction.chemicalistUserAddress.update({
+        where: { id },
+        data: input,
+      });
+    });
+  }
+
+  async deleteMyAddress(id: string, actor: RequestIdentity) {
+    const result = await this.prisma.chemicalistUserAddress.updateMany({
+      where: {
+        id,
+        tenantId: this.tenant(actor),
+        userId: actor.userId,
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date(), isDefault: false },
+    });
+    if (result.count !== 1) {
+      throw new NotFoundException({ code: 'ADDRESS_NOT_FOUND', message: 'Address not found' });
+    }
+    return { deleted: true };
+  }
+}
+`,
+    controller: `import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { z } from 'zod';
+import { createZodDto } from 'nestjs-zod';
+import { RequirePermission } from '../authorization/permissions';
+import { CurrentIdentity } from '../security/current-identity.decorator';
+import type { RequestIdentity } from '../../shared/context/request-context';
+import { LocationService } from './location.service';
+
+const CountrySchema = z.object({
+  code: z.string().trim().min(2).max(3),
+  name: z.string().trim().min(1).max(200),
+  nativeName: z.string().trim().max(200).optional(),
+  phoneCode: z.string().trim().max(10).optional(),
+}).strict();
+const RegionSchema = z.object({
+  code: z.string().trim().min(1).max(50),
+  name: z.string().trim().min(1).max(200),
+}).strict();
+const CitySchema = RegionSchema;
+const AddressSchema = z.object({
+  title: z.string().trim().min(1).max(100),
+  countryId: z.string().min(1).max(100),
+  regionId: z.string().min(1).max(100),
+  cityId: z.string().min(1).max(100),
+  addressLine1: z.string().trim().min(1).max(500),
+  addressLine2: z.string().trim().max(500).optional(),
+  postalCode: z.string().trim().max(40).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  isDefault: z.boolean().optional(),
+}).strict();
+
+class CountryDto extends createZodDto(CountrySchema) {}
+class RegionDto extends createZodDto(RegionSchema) {}
+class CityDto extends createZodDto(CitySchema) {}
+class AddressDto extends createZodDto(AddressSchema) {}
+
+@Controller('platform/locations')
+export class LocationController {
+  constructor(private readonly locations: LocationService) {}
+
+  @Get('countries')
+  @RequirePermission('platform.location:read')
+  countries(@CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.listCountries(actor);
+  }
+
+  @Post('countries')
+  @RequirePermission('platform.location:write')
+  createCountry(@Body() body: CountryDto, @CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.createCountry(body, actor);
+  }
+
+  @Get('countries/:countryId/regions')
+  @RequirePermission('platform.location:read')
+  regions(@Param('countryId') countryId: string, @CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.listRegions(countryId, actor);
+  }
+
+  @Post('countries/:countryId/regions')
+  @RequirePermission('platform.location:write')
+  createRegion(
+    @Param('countryId') countryId: string,
+    @Body() body: RegionDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.locations.createRegion(countryId, body, actor);
+  }
+
+  @Get('regions/:regionId/cities')
+  @RequirePermission('platform.location:read')
+  cities(@Param('regionId') regionId: string, @CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.listCities(regionId, actor);
+  }
+
+  @Post('regions/:regionId/cities')
+  @RequirePermission('platform.location:write')
+  createCity(
+    @Param('regionId') regionId: string,
+    @Body() body: CityDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.locations.createCity(regionId, body, actor);
+  }
+
+  @Get('me/addresses')
+  addresses(@CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.listMyAddresses(actor);
+  }
+
+  @Post('me/addresses')
+  createAddress(@Body() body: AddressDto, @CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.createMyAddress(body, actor);
+  }
+
+  @Post('me/addresses/:id')
+  updateAddress(
+    @Param('id') id: string,
+    @Body() body: AddressDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.locations.updateMyAddress(id, body, actor);
+  }
+
+  @Delete('me/addresses/:id')
+  deleteAddress(@Param('id') id: string, @CurrentIdentity() actor: RequestIdentity) {
+    return this.locations.deleteMyAddress(id, actor);
+  }
+}
+`,
+    module: `import { Global, Module } from '@nestjs/common';
+import { LocationController } from './location.controller';
+import { LocationService } from './location.service';
+
+@Global()
+@Module({
+  controllers: [LocationController],
+  providers: [LocationService],
+  exports: [LocationService],
+})
+export class LocationModule {}
 `,
   };
 }
@@ -1571,6 +1930,7 @@ import { FeatureFlagModule } from './configuration/feature-flag/feature-flag.mod
 import { FilesModule } from './files/files.module';
 import { IdentityModule } from './identity/identity.module';
 import { IntegrationModule } from './integration/integration.module';
+import { LocationModule } from './location/location.module';
 import { ModuleRegistryModule } from './modules/module-registry.module';
 import { NotificationModule } from './notification/notification.module';
 import { ReportingModule } from './reporting/reporting.module';
@@ -1606,6 +1966,7 @@ import { WorkflowModule } from './workflow/workflow.module';
     SearchModule,
     ReportingModule,
     IntegrationModule,
+    LocationModule,
   ],
   exports: [
     IdentityModule,
@@ -1622,6 +1983,7 @@ import { WorkflowModule } from './workflow/workflow.module';
     SearchModule,
     ReportingModule,
     IntegrationModule,
+    LocationModule,
   ],
 })
 export class PlatformModule {}
@@ -1630,6 +1992,7 @@ export class PlatformModule {}
 
 module.exports = {
   auditFiles,
+  locationFiles,
   notificationFiles,
   filesFiles,
   workflowFiles,

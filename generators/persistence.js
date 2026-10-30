@@ -448,6 +448,79 @@ function platformModelBlocks(ctx, schema) {
   );
 
   blocks.push(
+    ...platformModel(schema, "ChemicalistCountry", "chemicalist_country", [
+      'id        String   @id @default(uuid()) @db.Uuid',
+      'tenantId  String   @db.Uuid',
+      'code      String',
+      'name      String',
+      'nativeName String?',
+      'phoneCode String?',
+      'isActive  Boolean  @default(true)',
+      'createdAt DateTime @default(now())',
+      'updatedAt DateTime @updatedAt',
+      '',
+      '@@unique([tenantId, code])',
+      '@@index([tenantId, name])',
+    ]),
+  );
+
+  blocks.push(
+    ...platformModel(schema, "ChemicalistRegion", "chemicalist_region", [
+      'id        String   @id @default(uuid()) @db.Uuid',
+      'tenantId  String   @db.Uuid',
+      'countryId String   @db.Uuid',
+      'code      String',
+      'name      String',
+      'isActive  Boolean  @default(true)',
+      'createdAt DateTime @default(now())',
+      'updatedAt DateTime @updatedAt',
+      '',
+      '@@unique([tenantId, countryId, code])',
+      '@@index([tenantId, countryId, name])',
+    ]),
+  );
+
+  blocks.push(
+    ...platformModel(schema, "ChemicalistCity", "chemicalist_city", [
+      'id        String   @id @default(uuid()) @db.Uuid',
+      'tenantId  String   @db.Uuid',
+      'regionId  String   @db.Uuid',
+      'code      String',
+      'name      String',
+      'isActive  Boolean  @default(true)',
+      'createdAt DateTime @default(now())',
+      'updatedAt DateTime @updatedAt',
+      '',
+      '@@unique([tenantId, regionId, code])',
+      '@@index([tenantId, regionId, name])',
+    ]),
+  );
+
+  blocks.push(
+    ...platformModel(schema, "ChemicalistUserAddress", "chemicalist_user_address", [
+      'id           String    @id @default(uuid()) @db.Uuid',
+      'tenantId     String    @db.Uuid',
+      'userId       String    @db.Uuid',
+      'title        String',
+      'countryId    String    @db.Uuid',
+      'regionId     String    @db.Uuid',
+      'cityId       String    @db.Uuid',
+      'addressLine1 String',
+      'addressLine2 String?',
+      'postalCode   String?',
+      'latitude     Float?',
+      'longitude    Float?',
+      'isDefault    Boolean   @default(false)',
+      'deletedAt    DateTime?',
+      'createdAt    DateTime  @default(now())',
+      'updatedAt    DateTime  @updatedAt',
+      '',
+      '@@index([tenantId, userId, deletedAt])',
+      '@@index([tenantId, countryId, regionId, cityId])',
+    ]),
+  );
+
+  blocks.push(
     ...platformModel(schema, "ChemicalistNotification", "chemicalist_notification", [
       'id          String    @id @default(uuid()) @db.Uuid',
       'tenantId    String?   @db.Uuid',

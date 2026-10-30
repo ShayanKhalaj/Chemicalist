@@ -721,6 +721,7 @@ function sharedRequestContext() {
 
 export interface RequestIdentity {
   userId: string;
+  sessionId?: string;
   email: string;
   roles: string[];
   tenantId?: string;

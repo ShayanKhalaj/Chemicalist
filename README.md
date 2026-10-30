@@ -260,13 +260,49 @@ The backend separates platform concerns (`src/platform`), application
 infrastructure (`src/infrastructure`), shared primitives (`src/shared`), and
 business modules (`src/labs/<lab>/studios/<studio>`). It includes identity,
 authentication, authorization/RBAC, audit, tenancy, validation, repositories,
-and optional transport capabilities.
+tenant-scoped geographic locations, validation, repositories, and optional
+transport capabilities.
 
 The admin frontend is an independent Next.js App Router project with login,
 authenticated layout, navigation, dashboard, generated model CRUD screens,
 shared API client/components, responsive styling, and configurable design
 tokens. Both projects have separate package manifests, Git ignores, and Docker
 builds.
+
+### Identity, authentication, authorization, tenancy, and locations
+
+The generated auth endpoints are under `/api/v1/platform/auth`: `POST login`,
+`POST refresh`, `POST logout`, `GET me`, and the email/mobile verification
+endpoints. `GET sessions`, `DELETE sessions/:sessionId`, `POST logout-all`, and
+`POST change-password` provide session and credential management. Access tokens
+are bound to a persisted session; revoked sessions, disabled users, and changed
+permissions take effect on the next request. Refresh tokens are stored as hashes
+and rotated when refreshed. Set a unique `JWT_SECRET` of at least 32 characters
+before using a production environment.
+
+Identity and RBAC management endpoints are under `/api/v1/platform/identity`.
+They include user/profile/device operations, roles, role groups, permission
+groups, the permission catalogue, role assignments, and role-permission
+management. `PUT roles/:roleKey/permissions`,
+`PUT role-groups/:groupKey/roles`, and
+`PUT permission-groups/:groupKey/permissions` replace grants atomically;
+`DELETE users/:id/roles/:roleKey` and
+`DELETE users/:id/role-groups/:groupKey` revoke assignments. Tenant-bound
+callers are restricted to their tenant; only platform administrators can choose
+another tenant or manage tenant creation. Permission checks use current database
+grants rather than trusting privilege claims embedded in old access tokens.
+
+Geographic records are tenant-owned and managed under
+`/api/v1/platform/locations`: countries, regions, and cities can be created and
+listed, and their parent-child relationships are checked. Authenticated users
+can manage only their own addresses at `/api/v1/platform/locations/me/addresses`.
+An address must reference an active country/region/city chain in the caller's
+tenant. The generated system provides the schema and APIs; it does not bundle
+a country/city dataset.
+
+Audit records are written for HTTP actions, including failed authorization,
+and non-platform administrators can only query records for their own tenant.
+Sensitive request bodies and tokens are not copied into audit metadata.
 
 Generated list endpoints support pagination, free-text search, typed filters,
 AND/OR filter mode, and multiple sort keys. A query can use JSON filters and a
@@ -294,5 +330,5 @@ npm run validate:example
 ```
 
 The generation tests verify manifest validation, DTO and query contracts,
-repository methods, RBAC/audit models, seeding assets, Docker output, and UI
-theme customization.
+repository methods, tenant-aware platform modules, location models/APIs,
+RBAC/audit behavior, seeding assets, Docker output, and UI theme customization.

@@ -32,7 +32,7 @@ const EnvSchema = z.object({
     .default('postgresql://postgres:postgres@localhost:5432/postgres?schema=${ctx.persistence.schema}'),
   CORS_ORIGIN: z.string().default('${corsOrigin}'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  JWT_SECRET: z.string().min(16).default('change-me-in-production'),
+  JWT_SECRET: z.string().min(32).default('development-only-secret-change-before-deploy'),
   JWT_EXPIRES_IN: z.string().default('1h'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   BOOTSTRAP_USER_EMAIL: z.string().email().optional().or(z.literal('')),
@@ -43,10 +43,23 @@ const EnvSchema = z.object({
   INTEGRATION_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(10000),
 ${ctx.has("cache") ? "  REDIS_URL: z.string().default('redis://localhost:6379'),\n" : ""}${ctx.has("messaging") ? "  RABBITMQ_URL: z.string().default('amqp://guest:guest@localhost:5672'),\n" : ""}${ctx.app.hasVersioning ? "  API_VERSION: z.string().default('" + ctx.app.api.version + "'),\n" : ""}});
 
-export type AppEnv = z.infer<typeof EnvSchema>;
+const RuntimeEnvSchema = EnvSchema.superRefine((environment, context) => {
+  if (
+    environment.NODE_ENV === 'production' &&
+    environment.JWT_SECRET.startsWith('development-only-')
+  ) {
+    context.addIssue({
+      code: 'custom',
+      path: ['JWT_SECRET'],
+      message: 'Set a unique JWT_SECRET of at least 32 characters in production',
+    });
+  }
+});
+
+export type AppEnv = z.infer<typeof RuntimeEnvSchema>;
 
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
-  const result = EnvSchema.safeParse(config);
+  const result = RuntimeEnvSchema.safeParse(config);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => '  - ' + issue.path.join('.') + ': ' + issue.message)
@@ -57,7 +70,7 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
 }
 
 export const APP_CONFIG = 'APP_CONFIG';
-export const appConfig = () => EnvSchema.parse(process.env);
+export const appConfig = () => RuntimeEnvSchema.parse(process.env);
 `.replace(
       /\.default\('postgresql:[^']*'\),/,
       '.default(' + JSON.stringify(defaultDatabaseUrl) + '),',
@@ -116,7 +129,6 @@ export interface CreateUserInput {
   password: string;
   displayName?: string;
   tenantId?: string;
-  isPlatformAdmin?: boolean;
 }
 
 export interface UserRecord {
@@ -132,12 +144,13 @@ export interface UserRecord {
   createdAt: Date;
 }
 `,
-    service: `    import { ConflictException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+    service: `import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes, randomInt } from 'node:crypto';
 import { hash } from 'bcryptjs';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ALL_PERMISSION_KEYS } from '../authorization/permission-catalog';
+import type { RequestIdentity } from '../../shared/context/request-context';
 import type { CreateUserInput, Principal, UserRecord, UserView } from './identity.types';
 
 const BCRYPT_ROUNDS = 12;
@@ -171,6 +184,15 @@ export class IdentityService {
     };
   }
 
+  private assertTenantAccess(tenantId: string | null, actor: RequestIdentity): void {
+    if (!actor.isPlatformAdmin && tenantId !== (actor.tenantId ?? null)) {
+      throw new ForbiddenException({
+        code: 'TENANT_SCOPE_VIOLATION',
+        message: 'User is outside this tenant',
+      });
+    }
+  }
+
   async findById(id: string): Promise<UserRecord | null> {
     return this.prisma.chemicalistUser.findUnique({ where: { id } });
   }
@@ -180,37 +202,60 @@ export class IdentityService {
   }
 
   async findByIdentifier(identifier: string): Promise<UserRecord | null> {
-    const normalized = identifier.toLowerCase();
+    const normalized = identifier.trim().toLowerCase();
     return this.prisma.chemicalistUser.findFirst({
       where: { OR: [{ email: normalized }, { username: normalized }] },
     });
   }
 
-  async listUsers(tenantId?: string): Promise<UserView[]> {
+  async listUsers(tenantId: string | undefined, actor: RequestIdentity): Promise<UserView[]> {
+    if (!actor.isPlatformAdmin && !actor.tenantId) return [];
+    const scope = actor.isPlatformAdmin ? tenantId : actor.tenantId ?? null;
     const users = await this.prisma.chemicalistUser.findMany({
-      where: tenantId ? { tenantId } : {},
+      where: scope === undefined ? {} : { tenantId: scope },
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
     return users.map((user) => IdentityService.toView(user));
   }
 
-  async createUser(input: CreateUserInput): Promise<UserView> {
-    const email = input.email.toLowerCase();
-    const existing = await this.prisma.chemicalistUser.findUnique({ where: { email } });
+  async createUser(input: CreateUserInput, actor: RequestIdentity): Promise<UserView> {
+    const email = input.email.trim().toLowerCase();
+    const username = input.username?.trim().toLowerCase() ?? null;
+    const existing = await this.prisma.chemicalistUser.findFirst({
+      where: { OR: [{ email }, ...(username ? [{ username }] : [])] },
+    });
     if (existing) {
-      throw new ConflictException({ code: 'USER_EXISTS', message: 'A user with this email already exists' });
+      throw new ConflictException({
+        code: 'USER_EXISTS',
+        message: 'A user with this email or username already exists',
+      });
+    }
+    if (!actor.isPlatformAdmin && !actor.tenantId) {
+      throw new ForbiddenException({
+        code: 'TENANT_SCOPE_VIOLATION',
+        message: 'A tenant-scoped identity is required to create users',
+      });
     }
     const passwordHash = await hash(input.password, BCRYPT_ROUNDS);
+    const tenantId = actor.isPlatformAdmin
+      ? input.tenantId ?? actor.tenantId ?? null
+      : actor.tenantId ?? null;
+    if (
+      tenantId &&
+      !(await this.prisma.chemicalistTenant.findUnique({ where: { id: tenantId } }))
+    ) {
+      throw new NotFoundException({ code: 'TENANT_NOT_FOUND', message: 'Tenant not found' });
+    }
     const user = await this.prisma.$transaction(async (transaction) => {
       const created = await transaction.chemicalistUser.create({
         data: {
           email,
-          username: input.username?.toLowerCase() ?? null,
+          username,
           passwordHash,
           displayName: input.displayName ?? null,
-          tenantId: input.tenantId ?? null,
-          isPlatformAdmin: input.isPlatformAdmin === true,
+          tenantId,
+          isPlatformAdmin: false,
         },
       });
       await transaction.chemicalistUserCredential.create({
@@ -255,6 +300,15 @@ export class IdentityService {
           },
         });
       }
+      const revokedAt = new Date();
+      await transaction.chemicalistRefreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt },
+      });
+      await transaction.chemicalistUserSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt },
+      });
     });
   }
 
@@ -374,7 +428,10 @@ export class IdentityService {
     return { verified: true };
   }
 
-  profileOf(userId: string) {
+  async profileOf(userId: string, actor: RequestIdentity) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
     return this.prisma.chemicalistUserProfile.findUnique({ where: { userId } });
   }
 
@@ -388,9 +445,11 @@ export class IdentityService {
       locale?: string;
       timeZone?: string;
     },
+    actor: RequestIdentity,
   ) {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
     return this.prisma.chemicalistUserProfile.upsert({
       where: { userId },
       update: input,
@@ -401,9 +460,11 @@ export class IdentityService {
   async registerDevice(
     userId: string,
     input: { deviceKey: string; name?: string; platform?: string; userAgent?: string },
+    actor: RequestIdentity,
   ) {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
     return this.prisma.chemicalistUserDevice.upsert({
       where: { userId_deviceKey: { userId, deviceKey: input.deviceKey } },
       update: { ...input, lastSeenAt: new Date(), revokedAt: null },
@@ -411,7 +472,14 @@ export class IdentityService {
     });
   }
 
-  async revokeDevice(userId: string, deviceId: string): Promise<boolean> {
+  async revokeDevice(
+    userId: string,
+    deviceId: string,
+    actor: RequestIdentity,
+  ): Promise<boolean> {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
     const result = await this.prisma.chemicalistUserDevice.updateMany({
       where: { id: deviceId, userId, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -419,38 +487,87 @@ export class IdentityService {
     return result.count > 0;
   }
 
-  listRoles() {
+  async activeSessionIdentity(
+    userId: string,
+    sessionId: string,
+  ): Promise<Principal | null> {
+    const [user, session] = await Promise.all([
+      this.findById(userId),
+      this.prisma.chemicalistUserSession.findFirst({
+        where: {
+          id: sessionId,
+          userId,
+          revokedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      }),
+    ]);
+    if (!user || user.status !== 'ACTIVE' || !session) return null;
+    return this.principalOf(user);
+  }
+
+  listRoles(tenantId: string | undefined, platformAdmin: boolean) {
     return this.prisma.chemicalistRole.findMany({
+      where: platformAdmin
+        ? (tenantId ? { tenantId } : {})
+        : tenantId
+          ? { OR: [{ tenantId }, { tenantId: null }] }
+          : { tenantId: null },
       orderBy: [{ tenantId: 'asc' }, { key: 'asc' }],
     });
   }
 
-  listRoleGroups() {
+  listRoleGroups(tenantId: string | undefined, platformAdmin: boolean) {
     return this.prisma.chemicalistRoleGroup.findMany({
+      where: platformAdmin
+        ? (tenantId ? { tenantId } : {})
+        : tenantId
+          ? { OR: [{ tenantId }, { tenantId: null }] }
+          : { tenantId: null },
       orderBy: [{ tenantId: 'asc' }, { key: 'asc' }],
     });
   }
 
-  listPermissionGroups() {
+  listPermissionGroups(tenantId: string | undefined, platformAdmin: boolean) {
     return this.prisma.chemicalistPermissionGroup.findMany({
+      where: platformAdmin
+        ? (tenantId ? { tenantId } : {})
+        : tenantId
+          ? { OR: [{ tenantId }, { tenantId: null }] }
+          : { tenantId: null },
       orderBy: [{ tenantId: 'asc' }, { key: 'asc' }],
     });
   }
 
   private async roleIdsOf(userId: string): Promise<string[]> {
+    const user = await this.findById(userId);
+    if (!user) return [];
     const [assignments, groupAssignments] = await Promise.all([
-      this.prisma.chemicalistUserRole.findMany({ where: { userId } }),
-      this.prisma.chemicalistUserRoleGroup.findMany({ where: { userId } }),
+      this.prisma.chemicalistUserRole.findMany({
+        where: { userId, tenantId: user.tenantId },
+      }),
+      this.prisma.chemicalistUserRoleGroup.findMany({
+        where: { userId, tenantId: user.tenantId },
+      }),
     ]);
     const groupRoles = groupAssignments.length
       ? await this.prisma.chemicalistRoleGroupRole.findMany({
           where: { roleGroupId: { in: groupAssignments.map((item) => item.roleGroupId) } },
         })
       : [];
-    return [...new Set([
+    const roleIds = [...new Set([
       ...assignments.map((item) => item.roleId),
       ...groupRoles.map((item) => item.roleId),
     ])];
+    if (roleIds.length === 0) return [];
+    const roles = await this.prisma.chemicalistRole.findMany({
+      where: {
+        id: { in: roleIds },
+        OR: [{ tenantId: user.tenantId }, { tenantId: null }],
+      },
+      select: { id: true },
+    });
+    return roles.map((role) => role.id);
   }
 
   async roleKeysOf(userId: string): Promise<string[]> {
@@ -485,6 +602,16 @@ export class IdentityService {
     return [...new Set(permissions.map((permission) => permission.key))];
   }
 
+  async permissionsForUser(
+    userId: string,
+    actor: RequestIdentity,
+  ): Promise<string[]> {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
+    return this.permissionsOf(userId);
+  }
+
   async principalOf(user: UserRecord): Promise<Principal> {
     return {
       userId: user.id,
@@ -495,12 +622,23 @@ export class IdentityService {
     };
   }
 
-  async assignRole(userId: string, roleKey: string): Promise<void> {
+  async assignRole(
+    userId: string,
+    roleKey: string,
+    actor?: RequestIdentity,
+  ): Promise<void> {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
-    const role = await this.prisma.chemicalistRole.findFirst({
-      where: { key: roleKey, OR: [{ tenantId: user.tenantId }, { tenantId: null }] },
-    });
+    if (actor) this.assertTenantAccess(user.tenantId, actor);
+    const role =
+      (await this.prisma.chemicalistRole.findFirst({
+        where: { key: roleKey, tenantId: user.tenantId },
+      })) ??
+      (user.tenantId
+        ? await this.prisma.chemicalistRole.findFirst({
+            where: { key: roleKey, tenantId: null },
+          })
+        : null);
     if (!role) throw new NotFoundException({ code: 'ROLE_NOT_FOUND', message: 'Role not found' });
     await this.prisma.chemicalistUserRole.upsert({
       where: { userId_roleId: { userId, roleId: role.id } },
@@ -509,12 +647,46 @@ export class IdentityService {
     });
   }
 
-  async assignRoleGroup(userId: string, groupKey: string): Promise<void> {
+  async revokeRole(
+    userId: string,
+    roleKey: string,
+    actor: RequestIdentity,
+  ): Promise<void> {
     const user = await this.findById(userId);
     if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
-    const group = await this.prisma.chemicalistRoleGroup.findFirst({
-      where: { key: groupKey, OR: [{ tenantId: user.tenantId }, { tenantId: null }] },
+    this.assertTenantAccess(user.tenantId, actor);
+    const role =
+      (await this.prisma.chemicalistRole.findFirst({
+        where: { key: roleKey, tenantId: user.tenantId },
+      })) ??
+      (user.tenantId
+        ? await this.prisma.chemicalistRole.findFirst({
+            where: { key: roleKey, tenantId: null },
+          })
+        : null);
+    if (!role) throw new NotFoundException({ code: 'ROLE_NOT_FOUND', message: 'Role not found' });
+    await this.prisma.chemicalistUserRole.deleteMany({
+      where: { userId, roleId: role.id, tenantId: user.tenantId },
     });
+  }
+
+  async assignRoleGroup(
+    userId: string,
+    groupKey: string,
+    actor: RequestIdentity,
+  ): Promise<void> {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
+    const group =
+      (await this.prisma.chemicalistRoleGroup.findFirst({
+        where: { key: groupKey, tenantId: user.tenantId },
+      })) ??
+      (user.tenantId
+        ? await this.prisma.chemicalistRoleGroup.findFirst({
+            where: { key: groupKey, tenantId: null },
+          })
+        : null);
     if (!group) {
       throw new NotFoundException({ code: 'ROLE_GROUP_NOT_FOUND', message: 'Role group not found' });
     }
@@ -522,6 +694,31 @@ export class IdentityService {
       where: { userId_roleGroupId: { userId, roleGroupId: group.id } },
       update: {},
       create: { userId, roleGroupId: group.id, tenantId: user.tenantId },
+    });
+  }
+
+  async revokeRoleGroup(
+    userId: string,
+    groupKey: string,
+    actor: RequestIdentity,
+  ): Promise<void> {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    this.assertTenantAccess(user.tenantId, actor);
+    const group =
+      (await this.prisma.chemicalistRoleGroup.findFirst({
+        where: { key: groupKey, tenantId: user.tenantId },
+      })) ??
+      (user.tenantId
+        ? await this.prisma.chemicalistRoleGroup.findFirst({
+            where: { key: groupKey, tenantId: null },
+          })
+        : null);
+    if (!group) {
+      throw new NotFoundException({ code: 'ROLE_GROUP_NOT_FOUND', message: 'Role group not found' });
+    }
+    await this.prisma.chemicalistUserRoleGroup.deleteMany({
+      where: { userId, roleGroupId: group.id, tenantId: user.tenantId },
     });
   }
 
@@ -537,18 +734,85 @@ export class IdentityService {
     const group =
       existing ??
       (await this.prisma.chemicalistRoleGroup.create({
-        data: { tenantId, key, name, isSystem: true },
+        data: { tenantId, key, name, isSystem: false },
       }));
-    const roles = await this.prisma.chemicalistRole.findMany({
+    const availableRoles = await this.prisma.chemicalistRole.findMany({
       where: { key: { in: roleKeys }, OR: [{ tenantId }, { tenantId: null }] },
     });
+    const roles = [...new Set(roleKeys)].map(
+      (roleKey) =>
+        availableRoles.find(
+          (role) => role.key === roleKey && role.tenantId === tenantId,
+        ) ??
+        availableRoles.find(
+          (role) => role.key === roleKey && role.tenantId === null,
+        ),
+    );
+    if (roles.some((role) => !role)) {
+      throw new BadRequestException({
+        code: 'INVALID_ROLE_GROUP',
+        message: 'One or more role keys are unknown or outside this tenant',
+      });
+    }
     if (roles.length) {
       await this.prisma.chemicalistRoleGroupRole.createMany({
-        data: roles.map((role) => ({ roleGroupId: group.id, roleId: role.id })),
+        data: roles
+          .filter((role): role is NonNullable<typeof role> => Boolean(role))
+          .map((role) => ({ roleGroupId: group.id, roleId: role.id })),
         skipDuplicates: true,
       });
     }
     return group.id;
+  }
+
+  async replaceRoleGroupRoles(
+    tenantId: string | null,
+    groupKey: string,
+    roleKeys: string[],
+  ): Promise<void> {
+    const group = await this.prisma.chemicalistRoleGroup.findFirst({
+      where: { tenantId, key: groupKey },
+    });
+    if (!group) {
+      throw new NotFoundException({ code: 'ROLE_GROUP_NOT_FOUND', message: 'Role group not found' });
+    }
+    if (group.isSystem) {
+      throw new BadRequestException({
+        code: 'SYSTEM_ROLE_GROUP_IMMUTABLE',
+        message: 'Membership on system role groups cannot be replaced',
+      });
+    }
+    const availableRoles = await this.prisma.chemicalistRole.findMany({
+      where: { key: { in: roleKeys }, OR: [{ tenantId }, { tenantId: null }] },
+    });
+    const roles = [...new Set(roleKeys)].map(
+      (roleKey) =>
+        availableRoles.find(
+          (role) => role.key === roleKey && role.tenantId === tenantId,
+        ) ??
+        availableRoles.find(
+          (role) => role.key === roleKey && role.tenantId === null,
+        ),
+    );
+    if (roles.some((role) => !role)) {
+      throw new BadRequestException({
+        code: 'INVALID_ROLE_GROUP',
+        message: 'One or more role keys are unknown or outside this tenant',
+      });
+    }
+    const selected = roles.filter(
+      (role): role is NonNullable<typeof role> => Boolean(role),
+    );
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.chemicalistRoleGroupRole.deleteMany({
+        where: { roleGroupId: group.id },
+      });
+      if (selected.length) {
+        await transaction.chemicalistRoleGroupRole.createMany({
+          data: selected.map((role) => ({ roleGroupId: group.id, roleId: role.id })),
+        });
+      }
+    });
   }
 
   async ensurePermissionGroup(
@@ -563,11 +827,17 @@ export class IdentityService {
     const group =
       existing ??
       (await this.prisma.chemicalistPermissionGroup.create({
-        data: { tenantId, key, name, isSystem: true },
+        data: { tenantId, key, name, isSystem: false },
       }));
     const permissions = await this.prisma.chemicalistPermission.findMany({
       where: { key: { in: permissionKeys } },
     });
+    if (permissions.length !== new Set(permissionKeys).size) {
+      throw new BadRequestException({
+        code: 'INVALID_PERMISSION_GROUP',
+        message: 'One or more permission keys are unknown',
+      });
+    }
     if (permissions.length) {
       await this.prisma.chemicalistPermissionGroupPermission.createMany({
         data: permissions.map((permission) => ({
@@ -580,11 +850,73 @@ export class IdentityService {
     return group.id;
   }
 
-  async grantPermissionGroup(roleKey: string, groupKey: string): Promise<void> {
-    const [role, group] = await Promise.all([
-      this.prisma.chemicalistRole.findFirst({ where: { key: roleKey } }),
-      this.prisma.chemicalistPermissionGroup.findFirst({ where: { key: groupKey } }),
-    ]);
+  async replacePermissionGroupPermissions(
+    tenantId: string | null,
+    groupKey: string,
+    permissionKeys: string[],
+  ): Promise<void> {
+    const group = await this.prisma.chemicalistPermissionGroup.findFirst({
+      where: { tenantId, key: groupKey },
+    });
+    if (!group) {
+      throw new NotFoundException({
+        code: 'PERMISSION_GROUP_NOT_FOUND',
+        message: 'Permission group not found',
+      });
+    }
+    if (group.isSystem) {
+      throw new BadRequestException({
+        code: 'SYSTEM_PERMISSION_GROUP_IMMUTABLE',
+        message: 'Membership on system permission groups cannot be replaced',
+      });
+    }
+    const permissions = await this.prisma.chemicalistPermission.findMany({
+      where: { key: { in: permissionKeys } },
+    });
+    if (permissions.length !== new Set(permissionKeys).size) {
+      throw new BadRequestException({
+        code: 'INVALID_PERMISSION_GROUP',
+        message: 'One or more permission keys are unknown',
+      });
+    }
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.chemicalistPermissionGroupPermission.deleteMany({
+        where: { permissionGroupId: group.id },
+      });
+      if (permissions.length) {
+        await transaction.chemicalistPermissionGroupPermission.createMany({
+          data: permissions.map((permission) => ({
+            permissionGroupId: group.id,
+            permissionId: permission.id,
+          })),
+        });
+      }
+    });
+  }
+
+  async grantPermissionGroup(
+    roleKey: string,
+    groupKey: string,
+    tenantId: string | null,
+  ): Promise<void> {
+    const role =
+      (await this.prisma.chemicalistRole.findFirst({
+        where: { key: roleKey, tenantId },
+      })) ??
+      (tenantId
+        ? await this.prisma.chemicalistRole.findFirst({
+            where: { key: roleKey, tenantId: null },
+          })
+        : null);
+    const group =
+      (await this.prisma.chemicalistPermissionGroup.findFirst({
+        where: { key: groupKey, tenantId },
+      })) ??
+      (tenantId
+        ? await this.prisma.chemicalistPermissionGroup.findFirst({
+            where: { key: groupKey, tenantId: null },
+          })
+        : null);
     if (!role) throw new NotFoundException({ code: 'ROLE_NOT_FOUND', message: 'Role not found' });
     if (!group) {
       throw new NotFoundException({ code: 'PERMISSION_GROUP_NOT_FOUND', message: 'Permission group not found' });
@@ -627,6 +959,89 @@ export class IdentityService {
       });
     }
     return role.id;
+  }
+
+  async createRole(
+      tenantId: string | null,
+      key: string,
+      name: string,
+      permissionKeys: string[],
+    ): Promise<string> {
+      const existing = await this.prisma.chemicalistRole.findFirst({
+        where: { tenantId, key },
+      });
+      if (existing) {
+        throw new ConflictException({ code: 'ROLE_EXISTS', message: 'Role key already exists' });
+      }
+      const permissions = await this.prisma.chemicalistPermission.findMany({
+        where: { key: { in: permissionKeys } },
+      });
+      if (permissions.length !== new Set(permissionKeys).size) {
+        throw new BadRequestException({
+          code: 'INVALID_PERMISSIONS',
+          message: 'One or more permission keys are unknown',
+        });
+      }
+      const role = await this.prisma.$transaction(async (transaction) => {
+        const created = await transaction.chemicalistRole.create({
+          data: { tenantId, key, name, isSystem: false },
+        });
+        if (permissions.length) {
+          await transaction.chemicalistRolePermission.createMany({
+            data: permissions.map((permission) => ({
+              roleId: created.id,
+              permissionId: permission.id,
+            })),
+          });
+        }
+        return created;
+      });
+      return role.id;
+    }
+
+  async replaceRolePermissions(
+      tenantId: string | null,
+      roleKey: string,
+      permissionKeys: string[],
+    ): Promise<void> {
+      const role = await this.prisma.chemicalistRole.findFirst({
+        where: { tenantId, key: roleKey },
+      });
+      if (!role) throw new NotFoundException({ code: 'ROLE_NOT_FOUND', message: 'Role not found' });
+      if (role.isSystem) {
+        throw new BadRequestException({
+          code: 'SYSTEM_ROLE_IMMUTABLE',
+          message: 'Permissions on system roles cannot be replaced',
+        });
+      }
+      const permissions = await this.prisma.chemicalistPermission.findMany({
+        where: { key: { in: permissionKeys } },
+      });
+      if (permissions.length !== new Set(permissionKeys).size) {
+        throw new BadRequestException({
+          code: 'INVALID_PERMISSIONS',
+          message: 'One or more permission keys are unknown',
+        });
+      }
+      await this.prisma.$transaction(async (transaction) => {
+        await transaction.chemicalistRolePermission.deleteMany({
+          where: { roleId: role.id },
+        });
+        if (permissions.length) {
+          await transaction.chemicalistRolePermission.createMany({
+            data: permissions.map((permission) => ({
+              roleId: role.id,
+              permissionId: permission.id,
+            })),
+          });
+        }
+      });
+    }
+
+  listPermissions() {
+    return this.prisma.chemicalistPermission.findMany({
+      orderBy: { key: 'asc' },
+    });
   }
 
   /**
@@ -699,9 +1114,11 @@ export class IdentityService {
   }
 }
 `,
-    controller: `import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+    controller: `import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
+    import { CurrentIdentity } from '../security/current-identity.decorator';
+    import type { RequestIdentity } from '../../shared/context/request-context';
 import { RequirePermission } from '../authorization/permissions';
 import { IdentityService } from './identity.service';
 
@@ -710,9 +1127,8 @@ const CreateUserSchema = z.object({
   username: z.string().min(1).max(100).optional(),
   password: z.string().min(8).max(200),
   displayName: z.string().min(1).max(200).optional(),
-  tenantId: z.string().uuid().optional(),
-  isPlatformAdmin: z.boolean().optional(),
-});
+  tenantId: z.string().min(1).max(100).optional(),
+}).strict();
 
 const AssignRoleSchema = z.object({
   roleKey: z.string().min(1).max(100),
@@ -722,17 +1138,35 @@ const AssignRoleGroupSchema = z.object({
   roleGroupKey: z.string().min(1).max(100),
 });
 
+const CreateRoleSchema = z.object({
+  key: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  permissionKeys: z.array(z.string().min(1).max(200)).default([]),
+}).strict();
+
+const ReplaceRolePermissionsSchema = z.object({
+  permissionKeys: z.array(z.string().min(1).max(200)),
+}).strict();
+
 const CreateRoleGroupSchema = z.object({
   key: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
   roleKeys: z.array(z.string().min(1).max(100)).min(1),
-});
+}).strict();
 
 const CreatePermissionGroupSchema = z.object({
   key: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
   permissionKeys: z.array(z.string().min(1).max(200)).min(1),
-});
+}).strict();
+
+const ReplaceRoleGroupRolesSchema = z.object({
+  roleKeys: z.array(z.string().min(1).max(100)),
+}).strict();
+
+const ReplacePermissionGroupPermissionsSchema = z.object({
+  permissionKeys: z.array(z.string().min(1).max(200)),
+}).strict();
 
 const UpdateProfileSchema = z.object({
   firstName: z.string().max(100).optional(),
@@ -753,8 +1187,12 @@ const RegisterDeviceSchema = z.object({
 class CreateUserDto extends createZodDto(CreateUserSchema) {}
 class AssignRoleDto extends createZodDto(AssignRoleSchema) {}
 class AssignRoleGroupDto extends createZodDto(AssignRoleGroupSchema) {}
+class CreateRoleDto extends createZodDto(CreateRoleSchema) {}
+class ReplaceRolePermissionsDto extends createZodDto(ReplaceRolePermissionsSchema) {}
 class CreateRoleGroupDto extends createZodDto(CreateRoleGroupSchema) {}
 class CreatePermissionGroupDto extends createZodDto(CreatePermissionGroupSchema) {}
+class ReplaceRoleGroupRolesDto extends createZodDto(ReplaceRoleGroupRolesSchema) {}
+class ReplacePermissionGroupPermissionsDto extends createZodDto(ReplacePermissionGroupPermissionsSchema) {}
 class UpdateProfileDto extends createZodDto(UpdateProfileSchema) {}
 class RegisterDeviceDto extends createZodDto(RegisterDeviceSchema) {}
 
@@ -762,22 +1200,48 @@ class RegisterDeviceDto extends createZodDto(RegisterDeviceSchema) {}
 export class IdentityController {
   constructor(private readonly identity: IdentityService) {}
 
+  private tenantScope(actor: RequestIdentity, requestedTenantId?: string): string | null {
+    return actor.isPlatformAdmin
+      ? requestedTenantId || actor.tenantId || null
+      : actor.tenantId ?? null;
+  }
+
   @Get('users')
   @RequirePermission('platform.identity:read')
-  listUsers(@Query('tenantId') tenantId?: string) {
-    return this.identity.listUsers(tenantId);
+  listUsers(
+    @Query('tenantId') tenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.listUsers(tenantId, actor);
   }
 
   @Post('users')
   @RequirePermission('platform.identity:write')
-  createUser(@Body() body: CreateUserDto) {
-    return this.identity.createUser(body);
+  createUser(
+    @Body() body: CreateUserDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.createUser(body, actor);
   }
 
   @Post('users/:id/roles')
   @RequirePermission('platform.identity:write')
-  assignRole(@Param('id') id: string, @Body() body: AssignRoleDto) {
-    return this.identity.assignRole(id, body.roleKey);
+  assignRole(
+    @Param('id') id: string,
+    @Body() body: AssignRoleDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.assignRole(id, body.roleKey, actor);
+  }
+
+  @Delete('users/:id/roles/:roleKey')
+  @RequirePermission('platform.identity:write')
+  revokeRole(
+    @Param('id') id: string,
+    @Param('roleKey') roleKey: string,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.revokeRole(id, roleKey, actor);
   }
 
   @Post('users/:id/role-groups')
@@ -785,14 +1249,25 @@ export class IdentityController {
   assignRoleGroup(
     @Param('id') id: string,
     @Body() body: AssignRoleGroupDto,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.identity.assignRoleGroup(id, body.roleGroupKey);
+    return this.identity.assignRoleGroup(id, body.roleGroupKey, actor);
+  }
+
+  @Delete('users/:id/role-groups/:groupKey')
+  @RequirePermission('platform.authorization:write')
+  revokeRoleGroup(
+    @Param('id') id: string,
+    @Param('groupKey') groupKey: string,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.revokeRoleGroup(id, groupKey, actor);
   }
 
   @Get('users/:id/profile')
   @RequirePermission('platform.identity:read')
-  profile(@Param('id') id: string) {
-    return this.identity.profileOf(id);
+  profile(@Param('id') id: string, @CurrentIdentity() actor: RequestIdentity) {
+    return this.identity.profileOf(id, actor);
   }
 
   @Post('users/:id/profile')
@@ -800,8 +1275,9 @@ export class IdentityController {
   updateProfile(
     @Param('id') id: string,
     @Body() body: UpdateProfileDto,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.identity.updateProfile(id, body);
+    return this.identity.updateProfile(id, body, actor);
   }
 
   @Post('users/:id/devices')
@@ -809,8 +1285,9 @@ export class IdentityController {
   registerDevice(
     @Param('id') id: string,
     @Body() body: RegisterDeviceDto,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.identity.registerDevice(id, body);
+    return this.identity.registerDevice(id, body, actor);
   }
 
   @Post('users/:id/devices/:deviceId/revoke')
@@ -818,41 +1295,139 @@ export class IdentityController {
   revokeDevice(
     @Param('id') id: string,
     @Param('deviceId') deviceId: string,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.identity.revokeDevice(id, deviceId);
+    return this.identity.revokeDevice(id, deviceId, actor);
   }
 
   @Get('roles')
   @RequirePermission('platform.authorization:read')
-  roles() {
-    return this.identity.listRoles();
+  roles(
+    @Query('tenantId') tenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.listRoles(
+      actor.isPlatformAdmin ? tenantId : actor.tenantId,
+      actor.isPlatformAdmin,
+    );
+  }
+
+  @Post('roles')
+  @RequirePermission('platform.authorization:write')
+  createRole(
+    @Body() body: CreateRoleDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.createRole(
+      this.tenantScope(actor, requestedTenantId),
+      body.key,
+      body.name,
+      body.permissionKeys,
+    );
+  }
+
+  @Get('permissions')
+  @RequirePermission('platform.authorization:read')
+  permissionsCatalog() {
+    return this.identity.listPermissions();
+  }
+
+  @Put('roles/:roleKey/permissions')
+  @RequirePermission('platform.authorization:write')
+  replaceRolePermissions(
+    @Param('roleKey') roleKey: string,
+    @Body() body: ReplaceRolePermissionsDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.replaceRolePermissions(
+      this.tenantScope(actor, requestedTenantId),
+      roleKey,
+      body.permissionKeys,
+    );
   }
 
   @Get('role-groups')
   @RequirePermission('platform.authorization:read')
-  roleGroups() {
-    return this.identity.listRoleGroups();
+  roleGroups(
+    @Query('tenantId') tenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.listRoleGroups(
+      actor.isPlatformAdmin ? tenantId : actor.tenantId,
+      actor.isPlatformAdmin,
+    );
   }
 
   @Post('role-groups')
   @RequirePermission('platform.authorization:write')
-  createRoleGroup(@Body() body: CreateRoleGroupDto) {
-    return this.identity.ensureRoleGroup(null, body.key, body.name, body.roleKeys);
+  createRoleGroup(
+    @Body() body: CreateRoleGroupDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.ensureRoleGroup(
+      this.tenantScope(actor, requestedTenantId),
+      body.key,
+      body.name,
+      body.roleKeys,
+    );
+  }
+
+  @Put('role-groups/:groupKey/roles')
+  @RequirePermission('platform.authorization:write')
+  replaceRoleGroupRoles(
+    @Param('groupKey') groupKey: string,
+    @Body() body: ReplaceRoleGroupRolesDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.replaceRoleGroupRoles(
+      this.tenantScope(actor, requestedTenantId),
+      groupKey,
+      body.roleKeys,
+    );
   }
 
   @Get('permission-groups')
   @RequirePermission('platform.authorization:read')
-  permissionGroups() {
-    return this.identity.listPermissionGroups();
+  permissionGroups(
+    @Query('tenantId') tenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.listPermissionGroups(
+      actor.isPlatformAdmin ? tenantId : actor.tenantId,
+      actor.isPlatformAdmin,
+    );
   }
 
   @Post('permission-groups')
   @RequirePermission('platform.authorization:write')
-  createPermissionGroup(@Body() body: CreatePermissionGroupDto) {
+  createPermissionGroup(
+    @Body() body: CreatePermissionGroupDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
     return this.identity.ensurePermissionGroup(
-      null,
+      this.tenantScope(actor, requestedTenantId),
       body.key,
       body.name,
+      body.permissionKeys,
+    );
+  }
+
+  @Put('permission-groups/:groupKey/permissions')
+  @RequirePermission('platform.authorization:write')
+  replacePermissionGroupPermissions(
+    @Param('groupKey') groupKey: string,
+    @Body() body: ReplacePermissionGroupPermissionsDto,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.replacePermissionGroupPermissions(
+      this.tenantScope(actor, requestedTenantId),
+      groupKey,
       body.permissionKeys,
     );
   }
@@ -862,14 +1437,23 @@ export class IdentityController {
   grantPermissionGroup(
     @Param('roleKey') roleKey: string,
     @Param('groupKey') groupKey: string,
+    @Query('tenantId') requestedTenantId: string | undefined,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.identity.grantPermissionGroup(roleKey, groupKey);
+    return this.identity.grantPermissionGroup(
+      roleKey,
+      groupKey,
+      this.tenantScope(actor, requestedTenantId),
+    );
   }
 
   @Get('users/:id/permissions')
   @RequirePermission('platform.identity:read')
-  permissions(@Param('id') id: string) {
-    return this.identity.permissionsOf(id);
+  permissions(
+    @Param('id') id: string,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.identity.permissionsForUser(id, actor);
   }
 }
 `,
@@ -909,6 +1493,7 @@ import type { Principal } from '../identity/identity.types';
 
 export interface AccessTokenClaims {
   sub: string;
+  sid: string;
   email: string;
   roles: string[];
   tenantId?: string;
@@ -929,7 +1514,10 @@ export class TokenService {
   ) {}
 
   /** Issues a signed access token carrying identity, tenant and admin flag. */
-  async issueAccess(principal: Principal): Promise<{ accessToken: string; expiresIn: string }> {
+  async issueAccess(
+    principal: Principal,
+    sessionId: string,
+  ): Promise<{ accessToken: string; expiresIn: string }> {
     const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '1h';
     const options: JwtSignOptions = {
       secret: this.config.get<string>('JWT_SECRET'),
@@ -937,6 +1525,7 @@ export class TokenService {
     };
     const claims: AccessTokenClaims = {
       sub: principal.userId,
+      sid: sessionId,
       email: principal.email,
       roles: principal.roles,
       tenantId: principal.tenantId,
@@ -949,11 +1538,16 @@ export class TokenService {
     const payload = await this.jwt.verifyAsync<Record<string, unknown>>(token, {
       secret: this.config.get<string>('JWT_SECRET'),
     });
-    if (typeof payload.sub !== 'string' || !Array.isArray(payload.roles)) {
+    if (
+      typeof payload.sub !== 'string' ||
+      typeof payload.sid !== 'string' ||
+      !Array.isArray(payload.roles)
+    ) {
       throw new Error('Malformed token payload');
     }
     return {
       sub: payload.sub,
+      sid: payload.sid,
       email: typeof payload.email === 'string' ? payload.email : '',
       roles: payload.roles.filter((role): role is string => typeof role === 'string'),
       tenantId: typeof payload.tenantId === 'string' ? payload.tenantId : undefined,
@@ -981,7 +1575,8 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { RequestContext } from '../../shared/context/request-context';
 import { IS_PUBLIC_KEY } from './public.decorator';
-import { TokenService } from './token.service';
+import { IdentityService } from '../identity/identity.service';
+import { TokenService, type AccessTokenClaims } from './token.service';
 import { AuditService } from '../audit/audit.service';
 
 interface AuthenticatedRequest extends Request {
@@ -992,6 +1587,7 @@ interface AuthenticatedRequest extends Request {
     tenantId?: string;
     isPlatformAdmin: boolean;
     requestId: string;
+    sessionId: string;
   };
 }
 
@@ -1005,6 +1601,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly tokens: TokenService,
+    private readonly identity: IdentityService,
     private readonly audit: AuditService,
   ) {}
 
@@ -1030,19 +1627,9 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Missing bearer token' });
     }
 
+    let claims: AccessTokenClaims;
     try {
-      const claims = await this.tokens.verifyAccess(header.slice('Bearer '.length).trim());
-      const identity = {
-        userId: claims.sub,
-        email: claims.email,
-        roles: claims.roles,
-        tenantId: claims.tenantId,
-        isPlatformAdmin: claims.adm,
-        requestId: String(request.headers['x-request-id'] ?? ''),
-      };
-      request.user = identity;
-      RequestContext.assign(identity);
-      return true;
+      claims = await this.tokens.verifyAccess(header.slice('Bearer '.length).trim());
     } catch {
       await this.audit.record({
         action: request.method + ' ' + request.path,
@@ -1055,6 +1642,33 @@ export class JwtAuthGuard implements CanActivate {
       });
       throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Invalid or expired token' });
     }
+
+    const principal = await this.identity.activeSessionIdentity(claims.sub, claims.sid);
+    if (!principal) {
+      await this.audit.record({
+        action: request.method + ' ' + request.path,
+        resourceType: request.route?.path ?? null,
+        ip: request.ip ?? null,
+        userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+        requestId: typeof request.headers['x-request-id'] === 'string' ? request.headers['x-request-id'] : null,
+        outcome: 'DENIED',
+        metadata: { reason: 'INACTIVE_ACCOUNT_OR_SESSION' },
+      });
+      throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Account or session is no longer active' });
+    }
+
+    const identity = {
+      userId: principal.userId,
+      email: principal.email,
+      roles: principal.roles,
+      tenantId: principal.tenantId,
+      isPlatformAdmin: principal.isPlatformAdmin,
+      requestId: String(request.headers['x-request-id'] ?? ''),
+      sessionId: claims.sid,
+    };
+    request.user = identity;
+    RequestContext.assign(identity);
+    return true;
   }
 }
 `,
@@ -1092,7 +1706,11 @@ export class AuthService {
     return this.identity.verifyMobileToken(token);
   }
 
-  async login(identifier: string, password: string): Promise<LoginResult> {
+  async login(
+    identifier: string,
+    password: string,
+    client: { ip?: string; userAgent?: string } = {},
+  ): Promise<LoginResult> {
     const user = await this.identity.findByIdentifier(identifier);
     if (!user || user.status !== 'ACTIVE' || !(await compare(password, user.passwordHash))) {
       throw new UnauthorizedException({
@@ -1102,23 +1720,31 @@ export class AuthService {
     }
 
     const principal = await this.identity.principalOf(user);
-    const access = await this.tokens.issueAccess(principal);
     const refresh = this.tokens.createRefreshToken();
-    const session = await this.prisma.chemicalistUserSession.create({
-      data: { userId: user.id, expiresAt: refresh.expiresAt },
+    const session = await this.prisma.$transaction(async (transaction) => {
+      const created = await transaction.chemicalistUserSession.create({
+        data: {
+          userId: user.id,
+          expiresAt: refresh.expiresAt,
+          ip: client.ip ?? null,
+          userAgent: client.userAgent ?? null,
+        },
+      });
+      await transaction.chemicalistRefreshToken.create({
+        data: {
+          userId: user.id,
+          sessionId: created.id,
+          tokenHash: refresh.hash,
+          expiresAt: refresh.expiresAt,
+        },
+      });
+      await transaction.chemicalistUser.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+      return created;
     });
-    await this.prisma.chemicalistRefreshToken.create({
-      data: {
-        userId: user.id,
-        sessionId: session.id,
-        tokenHash: refresh.hash,
-        expiresAt: refresh.expiresAt,
-      },
-    });
-    await this.prisma.chemicalistUser.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    const access = await this.tokens.issueAccess(principal, session.id);
 
     return {
       accessToken: access.accessToken,
@@ -1173,7 +1799,7 @@ export class AuthService {
     }
 
     const principal = await this.identity.principalOf(user);
-    const access = await this.tokens.issueAccess(principal);
+    const access = await this.tokens.issueAccess(principal, session.id);
     const next = this.tokens.createRefreshToken();
     const now = new Date();
     const rotated = await this.prisma.$transaction(async (transaction) => {
@@ -1186,13 +1812,17 @@ export class AuthService {
         data: { revokedAt: now },
       });
       if (claimed.count !== 1) return false;
-      await transaction.chemicalistRefreshToken.create({
+      const replacement = await transaction.chemicalistRefreshToken.create({
         data: {
           userId: user.id,
           sessionId: session.id,
           tokenHash: next.hash,
           expiresAt: next.expiresAt,
         },
+      });
+      await transaction.chemicalistRefreshToken.update({
+        where: { id: storedToken.id },
+        data: { replacedById: replacement.id },
       });
       await transaction.chemicalistUserSession.update({
         where: { id: session.id },
@@ -1201,6 +1831,17 @@ export class AuthService {
       return true;
     });
     if (!rotated) {
+      const revokedAt = new Date();
+      await this.prisma.$transaction([
+        this.prisma.chemicalistRefreshToken.updateMany({
+          where: { sessionId: storedToken.sessionId, revokedAt: null },
+          data: { revokedAt },
+        }),
+        this.prisma.chemicalistUserSession.updateMany({
+          where: { id: storedToken.sessionId, revokedAt: null },
+          data: { revokedAt },
+        }),
+      ]);
       throw new UnauthorizedException({
         code: 'INVALID_REFRESH_TOKEN',
         message: 'Refresh token was already used',
@@ -1215,12 +1856,12 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken: string): Promise<{ revoked: true }> {
+  async logout(refreshToken: string, userId: string): Promise<{ revoked: true }> {
     const hash = TokenService.hashRefreshToken(refreshToken);
     const storedToken = await this.prisma.chemicalistRefreshToken.findUnique({
       where: { tokenHash: hash },
     });
-    if (storedToken) {
+    if (storedToken && storedToken.userId === userId) {
       const revokedAt = new Date();
       await this.prisma.$transaction([
         this.prisma.chemicalistRefreshToken.updateMany({
@@ -1234,6 +1875,81 @@ export class AuthService {
       ]);
     }
     return { revoked: true };
+  }
+
+  async listSessions(userId: string, currentSessionId?: string) {
+    const sessions = await this.prisma.chemicalistUserSession.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        deviceId: true,
+        userAgent: true,
+        ip: true,
+        expiresAt: true,
+        lastSeenAt: true,
+        revokedAt: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return sessions.map((session) => ({
+      ...session,
+      isCurrent: session.id === currentSessionId,
+    }));
+  }
+
+  async revokeSession(userId: string, sessionId: string): Promise<{ revoked: true }> {
+    const session = await this.prisma.chemicalistUserSession.findFirst({
+      where: { id: sessionId, userId },
+      select: { id: true },
+    });
+    if (!session) {
+      throw new NotFoundException({ code: 'SESSION_NOT_FOUND', message: 'Session not found' });
+    }
+    const revokedAt = new Date();
+    await this.prisma.$transaction([
+      this.prisma.chemicalistRefreshToken.updateMany({
+        where: { sessionId, userId, revokedAt: null },
+        data: { revokedAt },
+      }),
+      this.prisma.chemicalistUserSession.updateMany({
+        where: { id: sessionId, userId, revokedAt: null },
+        data: { revokedAt },
+      }),
+    ]);
+    return { revoked: true };
+  }
+
+  async logoutAll(userId: string): Promise<{ revoked: true }> {
+    const revokedAt = new Date();
+    await this.prisma.$transaction([
+      this.prisma.chemicalistRefreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt },
+      }),
+      this.prisma.chemicalistUserSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt },
+      }),
+    ]);
+    return { revoked: true };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ changed: true }> {
+    const user = await this.identity.findById(userId);
+    if (!user || !(await compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Current password is incorrect',
+      });
+    }
+    await this.identity.setPassword(userId, newPassword);
+    return { changed: true };
   }
 
   async me(userId: string) {
@@ -1254,7 +1970,8 @@ export class AuthService {
   }
 }
 `,
-    authController: `import { Body, Controller, Get, Post } from '@nestjs/common';
+    authController: `import { Body, Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { CurrentIdentity } from '../current-identity.decorator';
@@ -1278,10 +1995,15 @@ const RefreshSchema = z.object({
 const VerificationTokenSchema = z.object({
   token: z.string().min(6).max(200),
 }).strict();
+const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(8).max(200),
+  newPassword: z.string().min(12).max(200),
+}).strict();
 
 class LoginDto extends createZodDto(LoginSchema) {}
 class RefreshDto extends createZodDto(RefreshSchema) {}
 class VerificationTokenDto extends createZodDto(VerificationTokenSchema) {}
+class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
 
 @Controller('platform/auth')
 export class AuthController {
@@ -1289,8 +2011,17 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  login(@Body() body: LoginDto) {
-    return this.auth.login(body.identifier ?? body.username ?? body.email!, body.password);
+  login(@Body() body: LoginDto, @Req() request: Request) {
+    return this.auth.login(
+      body.identifier ?? body.username ?? body.email!,
+      body.password,
+      {
+        ip: request.ip,
+        userAgent: typeof request.headers['user-agent'] === 'string'
+          ? request.headers['user-agent']
+          : undefined,
+      },
+    );
   }
 
   @Public()
@@ -1312,8 +2043,41 @@ export class AuthController {
   }
 
   @Post('logout')
-  logout(@Body() body: RefreshDto) {
-    return this.auth.logout(body.refreshToken);
+  logout(
+    @Body() body: RefreshDto,
+    @CurrentIdentity() identity: RequestIdentity,
+  ) {
+    return this.auth.logout(body.refreshToken, identity.userId);
+  }
+
+  @Get('sessions')
+  sessions(@CurrentIdentity() identity: RequestIdentity) {
+    return this.auth.listSessions(identity.userId, identity.sessionId);
+  }
+
+  @Delete('sessions/:sessionId')
+  revokeSession(
+    @Param('sessionId') sessionId: string,
+    @CurrentIdentity() identity: RequestIdentity,
+  ) {
+    return this.auth.revokeSession(identity.userId, sessionId);
+  }
+
+  @Post('logout-all')
+  logoutAll(@CurrentIdentity() identity: RequestIdentity) {
+    return this.auth.logoutAll(identity.userId);
+  }
+
+  @Post('change-password')
+  changePassword(
+    @Body() body: ChangePasswordDto,
+    @CurrentIdentity() identity: RequestIdentity,
+  ) {
+    return this.auth.changePassword(
+      identity.userId,
+      body.currentPassword,
+      body.newPassword,
+    );
   }
 
   @Get('me')
@@ -1467,8 +2231,6 @@ export class PermissionGuard implements CanActivate {
       });
       throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'No identity' });
     }
-    if (request.user.isPlatformAdmin) return true;
-
     const granted = await this.identity.permissionsOf(request.user.userId);
     const allowed = required.every(
       (permission) => granted.includes('*') || granted.includes(permission),
@@ -1582,18 +2344,29 @@ export class TenantGuard implements CanActivate {
   }
 }
 `,
-    service: `import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+    service: `import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import type { RequestIdentity } from '../../shared/context/request-context';
 
 @Injectable()
 export class TenancyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listTenants() {
-    return this.prisma.chemicalistTenant.findMany({ orderBy: { createdAt: 'asc' } });
+  listTenants(actor: RequestIdentity) {
+    if (actor.isPlatformAdmin) {
+      return this.prisma.chemicalistTenant.findMany({ orderBy: { createdAt: 'asc' } });
+    }
+    if (!actor.tenantId) return [];
+    return this.prisma.chemicalistTenant.findMany({
+      where: { id: actor.tenantId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 
-  async createTenant(input: { slug: string; name: string }) {
+  async createTenant(input: { slug: string; name: string }, actor: RequestIdentity) {
+    if (!actor.isPlatformAdmin) {
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'Only platform administrators can create tenants' });
+    }
     const existing = await this.prisma.chemicalistTenant.findUnique({
       where: { slug: input.slug },
     });
@@ -1603,14 +2376,24 @@ export class TenancyService {
     return this.prisma.chemicalistTenant.create({ data: input });
   }
 
-  listOrganizations(tenantId: string) {
+  listOrganizations(tenantId: string, actor: RequestIdentity) {
+    if (!actor.isPlatformAdmin && actor.tenantId !== tenantId) {
+      throw new ForbiddenException({ code: 'TENANT_SCOPE_VIOLATION', message: 'Organization is outside this tenant' });
+    }
     return this.prisma.chemicalistOrganization.findMany({
       where: { tenantId },
       orderBy: { name: 'asc' },
     });
   }
 
-  async createOrganization(tenantId: string, input: { name: string; code?: string }) {
+  async createOrganization(
+    tenantId: string,
+    input: { name: string; code?: string },
+    actor: RequestIdentity,
+  ) {
+    if (!actor.isPlatformAdmin && actor.tenantId !== tenantId) {
+      throw new ForbiddenException({ code: 'TENANT_SCOPE_VIOLATION', message: 'Organization is outside this tenant' });
+    }
     const tenant = await this.prisma.chemicalistTenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException({ code: 'TENANT_NOT_FOUND', message: 'Tenant not found' });
     return this.prisma.chemicalistOrganization.create({
@@ -1619,10 +2402,12 @@ export class TenancyService {
   }
 }
 `,
-    controller: `import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+    controller: `import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { RequirePermission } from '../authorization/permissions';
+import { CurrentIdentity } from '../security/current-identity.decorator';
+import type { RequestIdentity } from '../../shared/context/request-context';
 import { TenancyService } from './tenancy.service';
 
 const CreateTenantSchema = z.object({
@@ -1644,20 +2429,26 @@ export class TenancyController {
 
   @Get()
   @RequirePermission('platform.tenant:read')
-  list() {
-    return this.tenancy.listTenants();
+  list(@CurrentIdentity() actor: RequestIdentity) {
+    return this.tenancy.listTenants(actor);
   }
 
   @Post()
   @RequirePermission('platform.tenant:write')
-  create(@Body() body: CreateTenantDto) {
-    return this.tenancy.createTenant(body);
+  create(
+    @Body() body: CreateTenantDto,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.tenancy.createTenant(body, actor);
   }
 
   @Get(':id/organizations')
   @RequirePermission('platform.tenant:read')
-  organizations(@Param('id') id: string) {
-    return this.tenancy.listOrganizations(id);
+  organizations(
+    @Param('id') id: string,
+    @CurrentIdentity() actor: RequestIdentity,
+  ) {
+    return this.tenancy.listOrganizations(id, actor);
   }
 
   @Post(':id/organizations')
@@ -1665,8 +2456,9 @@ export class TenancyController {
   createOrganization(
     @Param('id') id: string,
     @Body() body: CreateOrganizationDto,
+    @CurrentIdentity() actor: RequestIdentity,
   ) {
-    return this.tenancy.createOrganization(id, body);
+    return this.tenancy.createOrganization(id, body, actor);
   }
 }
 `,
