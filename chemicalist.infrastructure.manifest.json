@@ -10,7 +10,11 @@
     "outbox": true,
     "inbox": true,
     "saga": true,
-    "tenantScope": true
+    "identity": true,
+    "authorization": true,
+    "tenancy": true,
+    "audit": true,
+    "notification": true
   },
   "services": {
     "elasticsearch": true

@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { pascal, kebab, camel } = require("./naming");
+const { pascal, kebab, camel, camelPlural } = require("./naming");
 const { normalizeModel } = require("./field-types");
 const { ACCEPTED_CAPABILITY_NAMES } = require("./capabilities");
 const { expandCatalog, CATALOG_FORMAT } = require("./catalog");
@@ -57,7 +57,6 @@ class ManifestError extends Error {
     this.issues = issues;
   }
 }
-
 /** Read + parse a manifest file. Relative paths are resolved against `cwd`. */
 function loadManifestFile(manifestPath, cwd = process.cwd()) {
   const absolutePath = path.resolve(cwd, manifestPath);
@@ -106,16 +105,11 @@ function projectFilesForManifest(manifestPath, options = {}) {
     const { json } = loadManifestFile(filePath);
     return json;
   };
-  const configPath =
-    options.configPath || sibling(".config.json") || base + ".config.json";
+  const configPath = options.configPath || sibling(".config.json");
   const infrastructurePath =
-    options.infrastructurePath ||
-    sibling(".infrastructure.manifest.json") ||
-    base + ".infrastructure.manifest.json";
+    options.infrastructurePath || sibling(".infrastructure.manifest.json");
   const frontendPath =
-    options.frontendPath ||
-    sibling(".frontend.manifest.json") ||
-    base + ".frontend.manifest.json";
+    options.frontendPath || sibling(".frontend.manifest.json");
   const uiTemplatePath =
     options.uiTemplatePath ||
     (fs.existsSync(path.join(path.dirname(absolutePath), "ui.template.json"))
@@ -278,6 +272,9 @@ function validateModelOptions(json, models, modelNames, issues) {
           fields.push(fieldName);
         }
       }
+      if (new Set(custom.fields).size !== custom.fields.length) {
+        issues.push(methodPath + ".fields: field names must be unique");
+      }
       if (fields.length === custom.fields.length) {
         model.customMethods.push({
           name: custom.name,
@@ -350,7 +347,11 @@ function validateManifest(json, options = {}) {
   const studio = json.studio;
   const labSlug = json.labSlug === undefined ? kebab(lab) : json.labSlug;
   const studioSlug =
-    json.studioSlug === undefined ? kebab(studio) : json.studioSlug;
+    json.studioSlug === undefined
+      ? json.slug === undefined
+        ? kebab(studio)
+        : json.slug
+      : json.studioSlug;
 
   if (typeof lab !== "string" || !LAB_PATTERN.test(lab)) {
     issues.push(
@@ -385,24 +386,73 @@ function validateManifest(json, options = {}) {
       'app.name: must be lowercase kebab-case (e.g. "inventory-studio")',
     );
   }
+  const apiPrefix =
+    typeof rawApp.apiPrefix === "string"
+      ? rawApp.apiPrefix.replace(/^\/+|\/+$/g, "")
+      : "api";
   const api = {
-    prefix:
-      typeof rawApp.apiPrefix === "string"
-        ? rawApp.apiPrefix.replace(/^\/+|\/+$/g, "")
-        : "api",
+    prefix: apiPrefix,
     version:
       typeof rawApp.apiVersion === "string" ? rawApp.apiVersion : undefined,
-    port: Number.isInteger(rawApp.port) ? rawApp.port : 3000,
+    port: rawApp.port === undefined ? 3000 : rawApp.port,
     corsOrigin:
       typeof rawApp.corsOrigin === "string"
         ? rawApp.corsOrigin
         : "http://localhost:5173",
   };
   if (
-    rawApp.apiVersion !== undefined &&
-    !/^[0-9]+(\.[0-9]+)?$/.test(String(rawApp.apiVersion))
+    rawApp.apiPrefix !== undefined &&
+    (typeof rawApp.apiPrefix !== "string" ||
+      !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(apiPrefix))
   ) {
-    issues.push('app.apiVersion: must be numeric (e.g. "1")');
+    issues.push("app.apiPrefix: must be a non-empty path prefix without empty segments");
+  }
+  if (
+    rawApp.port !== undefined &&
+    (!Number.isInteger(rawApp.port) || rawApp.port < 1 || rawApp.port > 65535)
+  ) {
+    issues.push("app.port: must be an integer between 1 and 65535");
+  }
+  if (
+    rawApp.apiVersion !== undefined &&
+    (typeof rawApp.apiVersion !== "string" ||
+      !/^[0-9]+(\.[0-9]+)?$/.test(rawApp.apiVersion))
+  ) {
+    issues.push('app.apiVersion: must be a numeric string (e.g. "1")');
+  }
+  if (rawApp.corsOrigin !== undefined) {
+    const origins =
+      typeof rawApp.corsOrigin === "string"
+        ? rawApp.corsOrigin.split(",").map((origin) => origin.trim())
+        : [];
+    const originPattern =
+      /^https?:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$/i;
+    if (
+      origins.length === 0 ||
+      origins.some((origin) => {
+        if (!originPattern.test(origin)) return true;
+        try {
+          const parsed = new URL(origin);
+          return (
+            parsed.origin !== origin ||
+            parsed.username !== "" ||
+            parsed.password !== ""
+          );
+        } catch {
+          return true;
+        }
+      })
+    ) {
+      issues.push("app.corsOrigin: must be a comma-separated list of HTTP(S) origins without paths or credentials");
+    }
+  }
+  for (const key of ["name", "title", "description"]) {
+    if (
+      rawApp[key] !== undefined &&
+      typeof rawApp[key] !== "string"
+    ) {
+      issues.push("app." + key + ": must be a string");
+    }
   }
   if (
     rawApp.outDir !== undefined &&
@@ -561,10 +611,20 @@ function validateManifest(json, options = {}) {
               model.name +
               ": unsupported operations " +
               invalid.map((op) => "`" + op + "`").join(", ") +
-              " (allowed: create, read, update, delete)",
+              " (allowed: create, read, list, search, update, delete)",
           );
         }
-        enabled = DEFAULT_OPERATIONS.filter((op) => requested.includes(op));
+        if (new Set(requested).size !== requested.length) {
+          issues.push(
+            "operations." + model.name + ": operation names must be unique",
+          );
+        }
+        enabled = DEFAULT_OPERATIONS.filter(
+          (op) =>
+            requested.includes(op) ||
+            (op === "read" &&
+              requested.some((alias) => alias === "list" || alias === "search")),
+        );
         if (enabled.length === 0) enabled = ["read"];
       }
     }
@@ -636,14 +696,28 @@ function validateManifest(json, options = {}) {
       issues.push("sort." + model.name + ": must be an array of fields");
     } else {
       for (const fieldName of sortFields) {
-        if (!model.fields.some((f) => f.name === fieldName)) {
+        const field = model.fields.find((candidate) => candidate.name === fieldName);
+        if (!field) {
           issues.push(
             "sort." + model.name + ": unknown field `" + fieldName + "`",
+          );
+        } else if (field.isArray || field.baseType === "json") {
+          issues.push(
+            "sort." +
+              model.name +
+              ": field `" +
+              fieldName +
+              "` cannot be sorted",
           );
         }
       }
       model.sortFields = sortFields.filter((f) =>
-        model.fields.some((field) => field.name === f),
+        model.fields.some(
+          (field) =>
+            field.name === f &&
+            !field.isArray &&
+            field.baseType !== "json",
+        ),
       );
     }
   }
@@ -701,6 +775,20 @@ function validateManifest(json, options = {}) {
         );
       }
     } else {
+      if (
+        ["tenantId", "deletedAt"].includes(fieldName) ||
+        from.fields.some((field) => field.name === fieldName)
+      ) {
+        issues.push(
+          prefix +
+            ".field: `" +
+            from.name +
+            "." +
+            fieldName +
+            "` is reserved or already defined",
+        );
+        return;
+      }
       // Generate the foreign key column automatically.
       from.writableFields.push({
         name: fieldName,
@@ -741,14 +829,50 @@ function validateManifest(json, options = {}) {
       );
       return;
     }
+    if (rel.required !== undefined && typeof rel.required !== "boolean") {
+      issues.push(prefix + ".required: must be a boolean");
+    }
+    if (
+      rel.collection !== undefined &&
+      (typeof rel.collection !== "string" ||
+        !/^[a-z][A-Za-z0-9]*$/.test(rel.collection))
+    ) {
+      issues.push(prefix + ".collection: must be camelCase");
+    }
+    if (
+      fromField &&
+      typeof rel.required === "boolean" &&
+      (fromField.optional || fromField.nullable) === rel.required
+    ) {
+      issues.push(
+        prefix +
+          ".required: must match the optionality of `" +
+          from.name +
+          "." +
+          fieldName +
+          "`",
+      );
+    }
+    const relationField = from.writableFields.find(
+      (field) => field.name === fieldName,
+    );
+    const relationRequired =
+      rel.required === undefined
+        ? Boolean(
+            relationField &&
+              !relationField.optional &&
+              !relationField.nullable,
+          )
+        : rel.required;
     relations.push({
       from: from.name,
       to: to.name,
       field: fieldName,
-      required: rel.required === true,
+      required: relationRequired,
       collection:
-        rel.collection ||
-        to.name.charAt(0).toLowerCase() + to.name.slice(1) + "s",
+        rel.collection === undefined
+          ? camelPlural(from.name)
+          : rel.collection,
     });
   });
 
@@ -762,13 +886,21 @@ function validateManifest(json, options = {}) {
       continue;
     }
     if (
-      from.writableFields.some((f) => f.name === rel.collection) ||
-      to.fields.some((f) => f.name === rel.field)
+      to.fields.some((field) => field.name === rel.collection) ||
+      from.fields.some(
+        (field) => field.name === rel.field.replace(/Id$/, ""),
+      ) ||
+      (to.relations || []).some(
+        (relation) => relation.field === rel.collection,
+      ) ||
+      (from.relations || []).some(
+        (relation) =>
+          relation.kind === "reference" &&
+          relation.field.replace(/Id$/, "") === rel.field.replace(/Id$/, ""),
+      )
     ) {
       issues.push(
         "relationships: generated relation name collides with a field on " +
-          rel.from +
-          " or " +
           rel.to,
       );
     }
@@ -780,7 +912,12 @@ function validateManifest(json, options = {}) {
       ownerField: rel.field,
     });
     from.relations = from.relations || [];
-    from.relations.push({ kind: "reference", field: rel.field, to: rel.to });
+    from.relations.push({
+      kind: "reference",
+      field: rel.field,
+      to: rel.to,
+      required: rel.required,
+    });
   }
 
   validateModelOptions(json, models, modelNames, issues);
@@ -823,6 +960,30 @@ function validateManifest(json, options = {}) {
   const rawUi = json.ui && typeof json.ui === "object" ? json.ui : {};
   if (rawUi.enabled !== undefined && typeof rawUi.enabled !== "boolean") {
     issues.push("frontend.enabled: must be a boolean");
+  }
+  if (
+    rawUi.title !== undefined &&
+    typeof rawUi.title !== "string"
+  ) {
+    issues.push("ui.title: must be a string");
+  }
+  if (
+    rawUi.apiBaseUrl !== undefined &&
+    (typeof rawUi.apiBaseUrl !== "string" ||
+      (() => {
+        try {
+          const parsed = new URL(rawUi.apiBaseUrl);
+          return (
+            !["http:", "https:"].includes(parsed.protocol) ||
+            parsed.username !== "" ||
+            parsed.password !== ""
+          );
+        } catch {
+          return true;
+        }
+      })())
+  ) {
+    issues.push("ui.apiBaseUrl: must be an absolute HTTP(S) URL without credentials");
   }
   const outputs = json.outputs && typeof json.outputs === "object" ? json.outputs : {};
   const targets = {

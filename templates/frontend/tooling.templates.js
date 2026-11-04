@@ -326,14 +326,18 @@ export interface JsonObject {
 }
 
 function layout(ctx) {
+  const title = JSON.stringify(ctx.app.ui.title);
+  const description = JSON.stringify(
+    ctx.app.description || ctx.app.ui.title,
+  );
   return `import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './styles.css';
 import { AuthProvider } from './components/providers';
 
 export const metadata: Metadata = {
-  title: '${escapeHtml(ctx.app.ui.title)}',
-  description: '${escapeHtml(ctx.app.description || ctx.app.ui.title)}',
+  title: ${title},
+  description: ${description},
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

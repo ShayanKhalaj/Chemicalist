@@ -439,6 +439,101 @@
       "searchFields": ["requirementCode", "jurisdiction", "authority", "reviewStatus", "documentType", "documentNumber", "complianceStatus", "reachStatus"],
       "sortFields": ["effectiveFrom", "effectiveUntil", "reviewedAt", "renewalDueAt"],
       "updateFields": ["jurisdiction", "authority", "effectiveFrom", "effectiveUntil", "sourceDocumentReference", "reviewStatus", "evidenceReference", "documentType", "documentNumber", "issuedAt", "renewalDueAt", "labScope", "auditFindings", "complianceStatus", "reachStatus"]
+    },
+    "organization": {
+      "description": "Organization legal identity and lifecycle.",
+      "fields": [
+        { "name": "organizationType", "type": "string", "required": true, "index": true },
+        { "name": "legalName", "type": "string", "required": false, "nullable": true },
+        { "name": "registrationNumber", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "parentOrganizationReference", "type": "string", "required": false, "nullable": true, "index": true }
+      ],
+      "searchFields": ["organizationType", "registrationNumber", "parentOrganizationReference"],
+      "operations": ["create", "read", "update"]
+    },
+    "organizationMembership": {
+      "description": "Organization membership and invitation lifecycle.",
+      "fields": [
+        { "name": "organizationReference", "type": "string", "required": true, "index": true },
+        { "name": "userReference", "type": "string", "required": true, "index": true },
+        { "name": "membershipRole", "type": "string", "required": true, "index": true },
+        { "name": "joinedAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "invitationExpiresAt", "type": "datetime", "required": false, "nullable": true }
+      ],
+      "searchFields": ["organizationReference", "userReference", "membershipRole"],
+      "sortFields": ["joinedAt", "invitationExpiresAt"],
+      "operations": ["create", "read", "update"]
+    },
+    "identityAccount": {
+      "description": "Identity account profile. Authentication secrets are deliberately excluded.",
+      "fields": [
+        { "name": "email", "type": "string", "required": true, "unique": true, "index": true },
+        { "name": "username", "type": "string", "required": false, "nullable": true, "unique": true, "index": true },
+        { "name": "displayName", "type": "string", "required": false, "nullable": true },
+        { "name": "accountStatus", "type": "string", "required": true, "default": "ACTIVE", "index": true },
+        { "name": "emailVerifiedAt", "type": "datetime", "required": false, "nullable": true }
+      ],
+      "searchFields": ["email", "username", "displayName", "accountStatus"],
+      "operations": ["create", "read", "update"]
+    },
+    "authenticationSession": {
+      "description": "Authentication session lifecycle and revocation.",
+      "fields": [
+        { "name": "userReference", "type": "string", "required": true, "index": true },
+        { "name": "deviceReference", "type": "string", "required": false, "nullable": true },
+        { "name": "authenticationMethod", "type": "string", "required": true, "index": true },
+        { "name": "expiresAt", "type": "datetime", "required": true, "index": true },
+        { "name": "lastSeenAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "revokedAt", "type": "datetime", "required": false, "nullable": true }
+      ],
+      "searchFields": ["userReference", "deviceReference", "authenticationMethod"],
+      "sortFields": ["expiresAt", "lastSeenAt", "revokedAt"],
+      "operations": ["read"]
+    },
+    "authorizationGrant": {
+      "description": "RBAC roles, permission keys, and scoped subject assignments.",
+      "fields": [
+        { "name": "roleKey", "type": "string", "required": true, "index": true },
+        { "name": "permissionKey", "type": "string", "required": true, "index": true },
+        { "name": "subjectReference", "type": "string", "required": true, "index": true },
+        { "name": "scope", "type": "string", "required": true, "default": "ORGANIZATION", "index": true },
+        { "name": "isSystem", "type": "boolean", "required": true, "default": false }
+      ],
+      "searchFields": ["roleKey", "permissionKey", "subjectReference", "scope"],
+      "operations": ["create", "read", "update"]
+    },
+    "auditEvent": {
+      "description": "Append-only audit events with actor, resource, outcome and request correlation.",
+      "fields": [
+        { "name": "actorReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "action", "type": "string", "required": true, "index": true },
+        { "name": "resourceType", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "resourceReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "outcome", "type": "string", "required": true, "default": "SUCCESS", "index": true },
+        { "name": "requestReference", "type": "string", "required": false, "nullable": true, "index": true },
+        { "name": "occurredAt", "type": "datetime", "required": true, "index": true },
+        { "name": "details", "type": "json", "required": false, "nullable": true }
+      ],
+      "searchFields": ["actorReference", "action", "resourceType", "resourceReference", "outcome", "requestReference"],
+      "sortFields": ["occurredAt"],
+      "operations": ["read"]
+    },
+    "notification": {
+      "description": "Recipient-scoped notification and delivery lifecycle.",
+      "fields": [
+        { "name": "recipientReference", "type": "string", "required": true, "index": true },
+        { "name": "channel", "type": "string", "required": true, "default": "IN_APP", "index": true },
+        { "name": "templateKey", "type": "string", "required": true, "index": true },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "body", "type": "text", "required": true },
+        { "name": "deliveryStatus", "type": "string", "required": true, "default": "QUEUED", "index": true },
+        { "name": "readAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "deliveredAt", "type": "datetime", "required": false, "nullable": true },
+        { "name": "payload", "type": "json", "required": false, "nullable": true }
+      ],
+      "searchFields": ["recipientReference", "channel", "templateKey", "deliveryStatus"],
+      "sortFields": ["readAt", "deliveredAt"],
+      "operations": ["create", "read", "update"]
     }
   }
 }

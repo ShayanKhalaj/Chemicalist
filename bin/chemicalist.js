@@ -19,6 +19,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const readline = require("node:readline/promises");
 const { stdin, stdout } = require("node:process");
+const chalk = require("chalk");
 
 const pkg = require("../package.json");
 const {
@@ -48,7 +49,7 @@ Usage:
   chemicalist validate <manifest.json...> [--json]
   chemicalist generate <manifest.json...> [--out <dir>] [--frontend-out <dir>]
                                  [--force] [--dry-run] [--quiet]
-  chemicalist init <manifest.json...> [--out <dir>] [--frontend-out <dir>]
+  chemicalist init [manifest.json...] [--out <dir>] [--frontend-out <dir>]
                                  [--force] [--no-install] [--verbose]
   chemicalist list [--out <dir>]
 
@@ -61,7 +62,7 @@ Options:
   --force       Overwrite generator-owned files modified since the last generation
   --dry-run     Report what would change without writing anything
   --no-install  init only: skip npm install in generated projects
-  --yes         init only: accept configuration defaults without prompts
+  --yes, -y     init only: accept defaults without prompts (useful for CI)
   --verbose     init only: stream npm output
   --json        Machine-readable output (validate only)
   --quiet       Only print the summary
@@ -267,6 +268,11 @@ function runGenerate(options, io, modeWhich = {}) {
   const frontendOutRoot = path.resolve(
     options.frontendOut || "chemicalist.frontend",
   );
+  if (pathsOverlap(outRoot, frontendOutRoot)) {
+    throw usageError(
+      "Backend and frontend output directories must be separate and cannot contain one another",
+    );
+  }
 
   // A studio-only run must never recreate an existing frontend scaffold.
   let frontendMode = modeWhich.frontend || "none";
@@ -626,9 +632,131 @@ function runGenerate(options, io, modeWhich = {}) {
  * project (scaffold + studio pages) and installs each project's own
  * dependencies.
  */
-function color(code, text) {
-  if (!stdout.isTTY || process.env.NO_COLOR || process.env.CI) return text;
-  return "\u001b[" + code + "m" + text + "\u001b[0m";
+function defaultProjectName(cwd = process.cwd()) {
+  const name = path.basename(path.resolve(cwd))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const valid = /^[a-z]/.test(name) ? name : "chemicalist-" + name;
+  return valid.length >= 2 ? valid.slice(0, 63) : "chemicalist-app";
+}
+
+async function ensureInitManifest(options, io, cwd = process.cwd()) {
+  if (options.manifests.length > 0) return;
+
+  const manifestPath = path.resolve(cwd, "chemicalist.manifest.json");
+  if (fs.existsSync(manifestPath)) {
+    options.manifests = [manifestPath];
+    return;
+  }
+
+  const interactive = stdin.isTTY && stdout.isTTY && !options.yes;
+  if (!interactive && !options.yes) {
+    throw usageError(
+      "No manifest was provided and chemicalist.manifest.json does not exist. " +
+        "Run `chemicalist init` in an interactive terminal or use `chemicalist init --yes` to initialize the enterprise catalog.",
+    );
+  }
+
+  const bundledManifest = path.resolve(
+    __dirname,
+    "..",
+    "templates",
+    "project",
+    "chemicalist.manifest.json",
+  );
+  if (!fs.existsSync(bundledManifest)) {
+    throw new Error("Bundled enterprise catalog is missing: " + bundledManifest);
+  }
+  fs.copyFileSync(bundledManifest, manifestPath);
+  const projectName = defaultProjectName(cwd);
+  options.manifests = [manifestPath];
+
+  const configPath = path.resolve(cwd, "chemicalist.config.json");
+  if (!fs.existsSync(configPath)) {
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify(
+        {
+          app: {
+            name: projectName,
+            title:
+              path.basename(cwd) || "Chemicalist Industry Platform",
+          },
+          outputs: { webservice: true, api: true, frontend: true },
+        },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
+  }
+
+  const infrastructurePath = path.resolve(cwd,
+    "chemicalist.infrastructure.manifest.json",
+  );
+  if (!fs.existsSync(infrastructurePath)) {
+    fs.writeFileSync(
+      infrastructurePath,
+      JSON.stringify(
+        {
+          persistence: { provider: "prisma", database: "postgres", schema: "public" },
+          capabilities: {
+            cache: false,
+            messaging: false,
+            outbox: false,
+            inbox: false,
+            saga: false,
+          },
+          services: { elasticsearch: false },
+        },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
+  }
+
+  const frontendPath = path.resolve(
+    cwd,
+    "chemicalist.frontend.manifest.json",
+  );
+  if (!fs.existsSync(frontendPath)) {
+    fs.writeFileSync(
+      frontendPath,
+      JSON.stringify({ enabled: true }, null, 2) + "\n",
+      "utf8",
+    );
+  }
+
+  const uiTemplatePath = path.resolve(cwd, "ui.template.json");
+  const bundledManifestDir = path.resolve(
+    __dirname,
+    "..",
+    "templates",
+    "project",
+  );
+  const bundledUiTemplate = path.join(
+    bundledManifestDir,
+    "ui.template.json",
+  );
+  const studioTemplatePath = path.resolve(
+    cwd,
+    "studio.manifest.template.json",
+  );
+  const bundledStudioTemplate = path.join(
+    bundledManifestDir,
+    "studio.manifest.template.json",
+  );
+  if (!fs.existsSync(uiTemplatePath) && fs.existsSync(bundledUiTemplate)) {
+    fs.copyFileSync(bundledUiTemplate, uiTemplatePath);
+  }
+  if (
+    !fs.existsSync(studioTemplatePath) &&
+    fs.existsSync(bundledStudioTemplate)
+  ) {
+    fs.copyFileSync(bundledStudioTemplate, studioTemplatePath);
+  }
 }
 
 function progress(io, current, total, label) {
@@ -639,7 +767,7 @@ function progress(io, current, total, label) {
   const width = 24;
   const filled = Math.round((current / total) * width);
   const bar = "[" + "█".repeat(filled) + "░".repeat(width - filled) + "]";
-  io.log(color("36", bar) + " " + color("1", label));
+  io.log(chalk.cyan(bar) + " " + chalk.bold(label));
 }
 
 async function configureInit(options, io) {
@@ -651,8 +779,14 @@ async function configureInit(options, io) {
   const answers = {
     database: base.persistence.database,
     schema: base.persistence.schema || "public",
-    services: { elasticsearch: base.services.elasticsearch },
+    services: { elasticsearch: base.services.elasticsearch === true },
     capabilities: {
+      rbac:
+        base.capabilities.identity === true &&
+        base.capabilities.authorization === true,
+      tenancy: base.capabilities.tenancy === true,
+      audit: base.capabilities.audit === true,
+      notification: base.capabilities.notification === true,
       messaging: base.capabilities.messaging === true,
       cache: base.capabilities.cache === true,
       outbox: base.capabilities.outbox === true,
@@ -666,50 +800,157 @@ async function configureInit(options, io) {
   const prompt = readline.createInterface({ input: stdin, output: stdout });
   const askYesNo = async (label, current) => {
     const hint = current ? "Y/n" : "y/N";
-    const value = (await prompt.question("  " + label + " [" + hint + "]: ")).trim().toLowerCase();
-    if (!value) return current;
-    if (["y", "yes"].includes(value)) return true;
-    if (["n", "no"].includes(value)) return false;
-    io.log(color("33", "  Please answer yes or no."));
-    return askYesNo(label, current);
+    while (true) {
+      const value = (
+        await prompt.question(
+          "  " + chalk.gray(label) + " " + chalk.dim("[" + hint + "]: "),
+        )
+      )
+        .trim()
+        .toLowerCase();
+      if (!value) return current;
+      if (["y", "yes"].includes(value)) return true;
+      if (["n", "no"].includes(value)) return false;
+      io.log(chalk.yellow("  Please answer yes or no."));
+    }
   };
   try {
     io.log("");
-    io.log(color("1", "Chemicalist project setup"));
-    const database = (
-      await prompt.question("  Database [postgres/mongodb] (" + answers.database + "): ")
-    ).trim().toLowerCase();
-    if (database) {
-      if (!["postgres", "postgresql", "mongodb", "mongo"].includes(database)) {
-        throw usageError("Database must be postgres or mongodb");
+    io.log(chalk.bold.cyan("  Configure your application"));
+    io.log(chalk.gray("  Press Enter to accept the suggested value."));
+    answers.capabilities.rbac = await askYesNo(
+      "Enable RBAC (identity, authentication and authorization)",
+      answers.capabilities.rbac,
+    );
+    answers.capabilities.tenancy = await askYesNo(
+      "Enable tenancy",
+      answers.capabilities.tenancy,
+    );
+    if (answers.capabilities.tenancy && !answers.capabilities.rbac) {
+      answers.capabilities.rbac = true;
+      io.log(chalk.yellow("  RBAC enabled because tenancy requires authenticated identity."));
+    }
+    answers.capabilities.audit = await askYesNo(
+      "Enable audit",
+      answers.capabilities.audit,
+    );
+    answers.capabilities.notification = await askYesNo(
+      "Enable notifications",
+      answers.capabilities.notification,
+    );
+    while (true) {
+      const database = (
+        await prompt.question(
+          "  " +
+            chalk.gray("Database") +
+            " " +
+            chalk.dim("[postgres/mongodb] (" + answers.database + "): "),
+        )
+      )
+        .trim()
+        .toLowerCase();
+      if (!database) break;
+      if (["postgres", "postgresql", "mongodb", "mongo"].includes(database)) {
+        answers.database = ["mongo", "mongodb"].includes(database)
+          ? "mongodb"
+          : "postgres";
+        break;
       }
-      answers.database = ["mongo", "mongodb"].includes(database) ? "mongodb" : "postgres";
+      io.log(chalk.yellow("  Choose postgres or mongodb."));
+    }
+    answers.capabilities.cache = await askYesNo(
+      "Enable cache (Redis)",
+      answers.capabilities.cache,
+    );
+    answers.capabilities.messaging = await askYesNo(
+      "Enable messaging (RabbitMQ)",
+      answers.capabilities.messaging,
+    );
+    if (answers.capabilities.messaging) {
+      answers.capabilities.outbox = await askYesNo(
+        "Enable outbox",
+        answers.capabilities.outbox,
+      );
+      answers.capabilities.inbox = await askYesNo(
+        "Enable inbox",
+        answers.capabilities.inbox,
+      );
+      answers.capabilities.saga = await askYesNo(
+        "Enable saga",
+        answers.capabilities.saga,
+      );
+    } else {
+      answers.capabilities.outbox = false;
+      answers.capabilities.inbox = false;
+      answers.capabilities.saga = false;
     }
     answers.services.elasticsearch = await askYesNo(
       "Include Elasticsearch",
       answers.services.elasticsearch,
     );
-    answers.capabilities.messaging = await askYesNo("Include RabbitMQ", answers.capabilities.messaging);
-    answers.capabilities.cache = await askYesNo("Include Redis", answers.capabilities.cache);
-    answers.capabilities.outbox = await askYesNo("Enable outbox", answers.capabilities.outbox);
-    answers.capabilities.inbox = await askYesNo("Enable inbox", answers.capabilities.inbox);
-    answers.capabilities.saga = await askYesNo("Enable saga", answers.capabilities.saga);
-    answers.outputs.webservice = await askYesNo("Generate web service / Docker files", answers.outputs.webservice);
-    answers.outputs.api = await askYesNo("Generate backend API", answers.outputs.api);
-    answers.outputs.frontend = await askYesNo("Generate admin frontend", answers.outputs.frontend);
+    answers.outputs.frontend = await askYesNo(
+      "Generate the frontend too",
+      answers.outputs.frontend,
+    );
+    answers.outputs.webservice = true;
+    answers.outputs.api = true;
     if ((answers.capabilities.outbox || answers.capabilities.inbox || answers.capabilities.saga) &&
         !answers.capabilities.messaging) {
       answers.capabilities.messaging = true;
-      io.log(color("33", "  RabbitMQ enabled because outbox/inbox/saga requires messaging."));
+      io.log(chalk.yellow("  RabbitMQ enabled because outbox/inbox/saga requires messaging."));
     }
     if (!answers.outputs.api && answers.outputs.frontend) {
       answers.outputs.frontend = false;
-      io.log(color("33", "  Frontend disabled because it requires the generated API."));
+      io.log(chalk.yellow("  Frontend disabled because it requires the generated API."));
     }
     return answers;
   } finally {
     prompt.close();
   }
+}
+
+function addSelectedCatalogFeatures(manifestPath, capabilities) {
+  const catalog = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  if (catalog.format !== "chemicalist.catalog" || !Array.isArray(catalog.labs)) {
+    return;
+  }
+  const labBySlug = new Map((catalog.labs || []).map((lab) => [lab.slug, lab]));
+  const addLab = (name, slug, ownership, studios) => {
+    if (labBySlug.has(slug)) return;
+    const lab = { name, slug, ownership, studios };
+    catalog.labs.push(lab);
+    labBySlug.set(slug, lab);
+  };
+  const hasStudio = (lab, slug) => lab.studios.some((studio) => studio.slug === slug);
+  const addStudio = (lab, name, slug, entities, description) => {
+    if (!hasStudio(lab, slug)) lab.studios.push({ name, slug, entities, description });
+  };
+  if (capabilities.rbac) {
+    addLab("Security", "security", "Identity lifecycle, authentication and least-privilege access control.", []);
+    const lab = labBySlug.get("security");
+    addStudio(lab, "Identity", "identity", [{ name: "Account", profile: "identityAccount" }], "Identity accounts and user profiles.");
+    addStudio(lab, "Authentication", "authentication", [{ name: "Session", profile: "authenticationSession" }], "Authenticated session lifecycle.");
+    addStudio(lab, "Authorization", "authorization", [{ name: "Role", profile: "authorizationGrant" }, { name: "Permission", profile: "authorizationGrant" }], "RBAC roles, permission grants and assignments.");
+  }
+  if (capabilities.tenancy) {
+    addLab("Organization", "organization", "Organization ownership, membership and tenant lifecycle.", []);
+    addStudio(labBySlug.get("organization"), "Tenancy", "tenancy", [{ name: "Organization", profile: "organization" }, { name: "Membership", profile: "organizationMembership" }], "Organization and tenant membership.");
+  }
+  if (capabilities.audit) {
+    addLab("Logs", "logs", "Immutable audit history and traceable business actions.", []);
+    addStudio(labBySlug.get("logs"), "Audit", "audit", [{ name: "AuditEvent", profile: "auditEvent" }], "Read-only audit event ledger.");
+  }
+  if (capabilities.notification) {
+    addLab("Messages", "messages", "User-facing messages and notification delivery lifecycle.", []);
+    addStudio(labBySlug.get("messages"), "Notifications", "notifications", [{ name: "Notification", profile: "notification" }], "Recipient notifications and delivery state.");
+  }
+  catalog.expected = catalog.expected || {};
+  catalog.expected.labs = catalog.labs.length;
+  catalog.expected.studios = catalog.labs.reduce(
+    (total, lab) => total + lab.studios.length,
+    0,
+  );
+  fs.writeFileSync(manifestPath, JSON.stringify(catalog, null, 2) + "\n", "utf8");
 }
 
 function persistInitConfig(manifestPath, answers) {
@@ -739,24 +980,48 @@ function persistInitConfig(manifestPath, answers) {
       database: answers.database,
       ...(answers.database === "postgres" ? { schema: answers.schema } : {}),
     },
-    capabilities: answers.capabilities,
+    capabilities: {
+      identity: answers.capabilities.rbac,
+      authorization: answers.capabilities.rbac,
+      tenancy: answers.capabilities.tenancy,
+      audit: answers.capabilities.audit,
+      notification: answers.capabilities.notification,
+      cache: answers.capabilities.cache,
+      messaging: answers.capabilities.messaging,
+      outbox: answers.capabilities.outbox,
+      inbox: answers.capabilities.inbox,
+      saga: answers.capabilities.saga,
+    },
     services: answers.services,
   });
   mergeJson(base + ".frontend.manifest.json", { enabled: answers.outputs.frontend });
 }
 
 async function commandInit(options, io) {
-  if (options.manifests.length === 0) {
-    throw usageError("init requires at least one manifest path");
-  }
-  progress(io, 1, 4, "Loading manifests");
+  await ensureInitManifest(options, io);
+  progress(io, 1, 4, "Loading local manifests");
   const answers = await configureInit(options, io);
+  if (!options.dryRun && options.manifests.length === 1) {
+    addSelectedCatalogFeatures(options.manifests[0], answers.capabilities);
+  }
+  const generatedCapabilities = {
+    identity: answers.capabilities.rbac,
+    authorization: answers.capabilities.rbac,
+    tenancy: answers.capabilities.tenancy,
+    audit: answers.capabilities.audit,
+    notification: answers.capabilities.notification,
+    cache: answers.capabilities.cache,
+    messaging: answers.capabilities.messaging,
+    outbox: answers.capabilities.outbox,
+    inbox: answers.capabilities.inbox,
+    saga: answers.capabilities.saga,
+  };
   options.overrides = {
     persistence: {
       database: answers.database,
       ...(answers.database === "postgres" ? { schema: answers.schema } : {}),
     },
-    capabilities: answers.capabilities,
+    capabilities: generatedCapabilities,
     services: answers.services,
     outputs: answers.outputs,
   };
@@ -834,6 +1099,19 @@ function commandList(options, io) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function pathsOverlap(first, second) {
+  const contains = (parent, candidate) => {
+    const relative = path.relative(parent, candidate);
+    return (
+      relative === "" ||
+      (!path.isAbsolute(relative) &&
+        relative !== ".." &&
+        !relative.startsWith(".." + path.sep))
+    );
+  };
+  return contains(first, second) || contains(second, first);
+}
 
 function writeStudioManifests(outRoot, registry) {
   const dir = path.join(outRoot, ".chemicalist", "manifests");
@@ -936,4 +1214,10 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, parseArgs, EXIT };
+module.exports = {
+  main,
+  parseArgs,
+  ensureInitManifest,
+  addSelectedCatalogFeatures,
+  EXIT,
+};

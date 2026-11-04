@@ -67,7 +67,25 @@ function catalogStudios(ctx) {
 /** Stable permission keys of every generated studio operation. */
 function businessPermissions(ctx) {
   const entries = [];
+  const seenLabs = new Set();
   for (const manifest of catalogStudios(ctx)) {
+    if (!seenLabs.has(manifest.labSlug)) {
+      entries.push({
+        key: "lab." + manifest.labSlug + ":read",
+        model: null,
+        labSlug: manifest.labSlug,
+        studioSlug: null,
+        action: "read",
+      });
+      seenLabs.add(manifest.labSlug);
+    }
+    entries.push({
+      key: "lab." + manifest.labSlug + "." + manifest.studioSlug + ":read",
+      model: null,
+      labSlug: manifest.labSlug,
+      studioSlug: manifest.studioSlug,
+      action: "read",
+    });
     for (const model of manifest.models) {
       const base =
         manifest.labSlug + "." + manifest.studioSlug + "." + kebab(model.name);

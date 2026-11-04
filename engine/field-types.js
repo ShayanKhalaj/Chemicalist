@@ -35,7 +35,17 @@ const FIELD_TYPES = [
   "array",
 ];
 
+const { RESERVED_WORDS } = require("./naming");
 const ID_TYPES = new Set(["uuid", "string", "int"]);
+const RESERVED_FIELD_NAMES = new Set([
+  ...RESERVED_WORDS,
+  "constructor",
+  "readonly",
+  "abstract",
+  "declare",
+  "override",
+  "accessor",
+]);
 
 /** Name of the implicit primary key column added to every model. */
 const ID_FIELD = "id";
@@ -66,6 +76,12 @@ function normalizeField(rawField, path, enums) {
     throw normalizationError(
       path + ".name",
       "the primary key field `id` is generated automatically; remove it from the manifest",
+    );
+  }
+  if (RESERVED_FIELD_NAMES.has(name)) {
+    throw normalizationError(
+      path + ".name",
+      "`" + name + "` is reserved by TypeScript and cannot be a model field",
     );
   }
 
@@ -129,13 +145,42 @@ function normalizeField(rawField, path, enums) {
 
   const required = rawField.required !== false;
   const nullable = rawField.nullable === true;
+  for (const key of ["label", "description"]) {
+    if (rawField[key] !== undefined && typeof rawField[key] !== "string") {
+      throw normalizationError(fieldPath + "." + key, "must be a string");
+    }
+  }
 
+  for (const flag of ["unique", "index", "primaryKey"]) {
+    if (
+      rawField[flag] !== undefined &&
+      typeof rawField[flag] !== "boolean"
+    ) {
+      throw normalizationError(fieldPath + "." + flag, "must be a boolean");
+    }
+  }
+  if (rawField.primaryKey === true) {
+    throw normalizationError(
+      fieldPath + ".primaryKey",
+      "only the generated `id` field can be a primary key",
+    );
+  }
+  const isArray = type.endsWith("[]");
+  const baseType = isArray ? type.slice(0, -2) : type;
   if (
-    rawField.primaryKey === true ||
-    rawField.unique === true ||
-    rawField.index === true
+    rawField.unique === true &&
+    (isArray || baseType === "json")
   ) {
-    // supported flags
+    throw normalizationError(
+      fieldPath + ".unique",
+      "unique constraints are not supported for array or JSON fields",
+    );
+  }
+  if (rawField.index === true && baseType === "json") {
+    throw normalizationError(
+      fieldPath + ".index",
+      "JSON indexes require database-specific configuration and are not supported",
+    );
   }
 
   let enumName = null;
@@ -155,7 +200,52 @@ function normalizeField(rawField, path, enums) {
     }
   }
 
-  const positional = ["id", "createdAt", "updatedAt"];
+  if (rawField.default !== undefined) {
+    const value = rawField.default;
+    let validDefault = false;
+    switch (type) {
+      case "string":
+      case "text":
+        validDefault = typeof value === "string";
+        break;
+      case "uuid":
+        validDefault =
+          typeof value === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+        break;
+      case "boolean":
+        validDefault = typeof value === "boolean";
+        break;
+      case "int":
+        validDefault = Number.isInteger(value);
+        break;
+      case "float":
+      case "decimal":
+        validDefault = typeof value === "number" && Number.isFinite(value);
+        break;
+      case "enum":
+        validDefault =
+          typeof value === "string" &&
+          (!enums || enums.get(enumName).values.includes(value));
+        break;
+      default:
+        validDefault = false;
+    }
+    if (!validDefault) {
+      throw normalizationError(
+        fieldPath + ".default",
+        "default value is not supported for this field type",
+      );
+    }
+  }
+
+  const positional = [
+    "id",
+    "tenantId",
+    "deletedAt",
+    "createdAt",
+    "updatedAt",
+  ];
   if (positional.includes(name)) {
     throw normalizationError(
       fieldPath + ".name",
@@ -167,8 +257,8 @@ function normalizeField(rawField, path, enums) {
     name,
     path: fieldPath,
     type,
-    isArray: type.endsWith("[]"),
-    baseType: type.endsWith("[]") ? type.slice(0, -2) : type,
+    isArray,
+    baseType,
     enumName,
     required,
     optional: !required,
@@ -250,6 +340,9 @@ function normalizeModel(rawModel, index, enums) {
   const fields = Array.isArray(rawModel.fields) ? rawModel.fields : null;
   if (!fields || fields.length === 0) {
     throw normalizationError(path + ".fields", "must be a non-empty array");
+  }
+  if (rawModel.label !== undefined && typeof rawModel.label !== "string") {
+    throw normalizationError(path + ".label", "must be a string");
   }
 
   const seen = new Set([ID_FIELD, "createdAt", "updatedAt"]);

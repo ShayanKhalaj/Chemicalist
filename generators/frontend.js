@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("node:path");
+
 /**
  * Frontend output: a Next.js (App Router) + React + TypeScript admin UI. It is
  * a completely separate project from the backend, rooted at the frontend
@@ -7,7 +9,7 @@
  *
  * Layout mirrors the backend foldering: shared shell/API/theme live under
  * `src/app`, and every studio owns its screens under
- * `src/labs/<lab>/studios/<studio>/features/<model>/`. The App Router tree
+ * `src/labs/<lab>/<studio>/features/<model>/`. The App Router tree
  * mirrors that layout: `src/app/(secure)/<lab>/<studio>/<route>/page.tsx`.
  */
 
@@ -29,11 +31,13 @@ const FRONTEND_ROOT = "";
 const SCAFFOLD_FILE = Symbol.for("chemicalist.frontend.scaffold");
 
 /**
- * Relative import path from a studio area to `src/app`.
- * Studio files live in `src/labs/<lab>/studios/<studio>/...`, so `src/app` is
- * four levels up.
+ * Relative import path from one generated file to another.
  */
-const APP_IMPORT = "../../../../app";
+function appImportForFile(filePath, target) {
+  let relative = path.posix.relative(path.posix.dirname(filePath), target);
+  if (!relative.startsWith(".")) relative = "./" + relative;
+  return relative;
+}
 
 /**
  * Pages live in `src/app/(secure)/<lab>/<studio>/<route>/{page.tsx,new/, [id]/edit/}`.
@@ -154,33 +158,33 @@ function listColumns(model) {
       .map((field) => {
         if (field.baseType === "boolean") {
           return (
-            "  { key: '" +
-            field.name +
-            "', label: '" +
-            field.label +
-            "', render: (row) => (row." +
+            "  { key: " +
+            JSON.stringify(field.name) +
+            ", label: " +
+            JSON.stringify(field.label) +
+            ", render: (row) => (row." +
             field.name +
             " ? 'Yes' : 'No') },"
           );
         }
         if (field.baseType === "date" || field.baseType === "datetime") {
           return (
-            "  { key: '" +
-            field.name +
-            "', label: '" +
-            field.label +
-            "', render: (row) => formatDate(row." +
+            "  { key: " +
+            JSON.stringify(field.name) +
+            ", label: " +
+            JSON.stringify(field.label) +
+            ", render: (row) => formatDate(row." +
             field.name +
             ") },"
           );
         }
         if (field.baseType === "json" || field.isArray) {
           return (
-            "  { key: '" +
-            field.name +
-            "', label: '" +
-            field.label +
-            "', render: (row) => (row." +
+            "  { key: " +
+            JSON.stringify(field.name) +
+            ", label: " +
+            JSON.stringify(field.label) +
+            ", render: (row) => (row." +
             field.name +
             " == null ? '' : JSON.stringify(row." +
             field.name +
@@ -188,7 +192,11 @@ function listColumns(model) {
           );
         }
         return (
-          "  { key: '" + field.name + "', label: '" + field.label + "' },"
+          "  { key: " +
+          JSON.stringify(field.name) +
+          ", label: " +
+          JSON.stringify(field.label) +
+          " },"
         );
       })
       .join("\n") +
@@ -215,6 +223,30 @@ function featureFlags(model) {
  */
 function generateListPage(ctx, model, pageDir) {
   const f = featureFlags(model);
+  if (!f.read) {
+    const createLink = f.create
+      ? `<Link className="button" href="new">New ${escapeJsx(model.label)}</Link>`
+      : "";
+    return `${f.create ? "import Link from 'next/link';\n\n" : ""}
+export default function ${model.name}ListPage() {
+  return (
+    <div className="page">
+      <div className="page-title">
+        <div>
+          <h1>${escapeJsx(model.label)}</h1>
+          <p>${escapeJsx(model.studioTitle)} — reading is disabled for this model.</p>
+        </div>
+        ${createLink}
+      </div>
+      <div className="card">
+        <p>Enable the read operation to display records here.</p>
+      </div>
+    </div>
+  );
+}
+`;
+  }
+
   const cols = listColumns(model);
   const canCreate = f.create;
   const hasDate = model.writableFields.some(
@@ -226,7 +258,6 @@ function generateListPage(ctx, model, pageDir) {
     pageDir,
     "labs/" +
       ctx.studio.labSlug +
-      "/studios/" +
       ctx.studio.studioSlug +
       "/features/" +
       model.name,
@@ -259,20 +290,20 @@ export default async function ${model.name}ListPage({ searchParams }: PageProps)
       '${api}?page=' + page + '&pageSize=' + PAGE_SIZE + (query ? '&search=' + encodeURIComponent(query) : ''),
     );
   } catch (failure: unknown) {
-    error = failure instanceof ServerApiError ? [failure.message] : ['Unable to load ${model.label} records.'];
+    error = failure instanceof ServerApiError ? [failure.message] : [${JSON.stringify("Unable to load " + model.label + " records.")}];
   }
 
   return (
     <div className="page">
       <div className="page-title">
         <div>
-          <h1>${model.label}</h1>
+          <h1>${escapeJsx(model.label)}</h1>
           <p>${escapeJsx(model.studioTitle)} — ${escapeJsx(model.name)} records.</p>
         </div>
         ${
           canCreate
             ? `<Link className="button" href="new">
-          New ${model.label}
+          New ${escapeJsx(model.label)}
         </Link>`
             : ""
         }
@@ -283,7 +314,7 @@ export default async function ${model.name}ListPage({ searchParams }: PageProps)
       {error.length ? <ErrorState messages={error} /> : null}
 
       {data && data.items.length === 0 ? (
-        <EmptyState title="No records yet" description="Create the first ${model.label.toLowerCase()} to get started." />
+        <EmptyState title="No records yet" description="Create the first ${escapeJsx(model.label.toLowerCase())} to get started." />
       ) : null}
 
       {data && data.items.length > 0 ? (
@@ -348,7 +379,7 @@ function generateSearchClient(ctx, model) {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-/** Search toolbar for the ${model.label} list. Updates the URL query string. */
+/** Search toolbar for ${model.name}. Updates the URL query string. */
 export function ${model.name}Search({ initialQuery }: { initialQuery: string }) {
   const [search, setSearch] = useState(initialQuery);
   const router = useRouter();
@@ -384,7 +415,7 @@ export function ${model.name}Search({ initialQuery }: { initialQuery: string }) 
 
 function formField(field, model) {
   const required = field.optional ? "" : " required";
-  const label = field.label + (field.optional ? "" : " *");
+  const label = escapeJsx(field.label + (field.optional ? "" : " *"));
   // Every input binds through a typed accessor, so the loose FormState record
   // never leaks a union type into a DOM prop.
   const bind =
@@ -400,8 +431,22 @@ function formField(field, model) {
     label +
     "</span>\n" +
     control +
-    (field.description ? "\n        <small>" + field.description + "</small>" : "") +
+    (field.description
+      ? "\n        <small>" + escapeJsx(field.description) + "</small>"
+      : "") +
     "\n      </label>";
+
+  if (field.isArray) {
+    return wrapper(
+      '        <textarea\n          rows={4}\n          className="mono"\n          placeholder="[]"\n          value={' +
+        bind +
+        "}\n          onChange={(event) => " +
+        update +
+        "event.target.value)}" +
+        required +
+        " />",
+    );
+  }
 
   switch (field.baseType) {
     case "boolean":
@@ -499,12 +544,26 @@ function generateFormPage(ctx, model, editMode, pageDir) {
   const initial = fields
     .map((field) => {
       if (field.baseType === "boolean") return "    " + field.name + ": false,";
+      if (field.isArray) return "    " + field.name + ": '[]',";
       return "    " + field.name + ": '',";
     })
     .join("\n");
 
   const hydrate = fields
     .map((field) => {
+      if (field.isArray) {
+        return (
+          "      " +
+          field.name +
+          ": record." +
+          field.name +
+          " === null || record." +
+          field.name +
+          " === undefined ? '' : JSON.stringify(record." +
+          field.name +
+          ", null, 2),"
+        );
+      }
       if (field.baseType === "boolean") {
         return "      " + field.name + ": Boolean(record." + field.name + "),";
       }
@@ -559,6 +618,17 @@ function generateFormPage(ctx, model, editMode, pageDir) {
 
   const serialize = fields
     .map((field) => {
+      if (field.isArray) {
+        return (
+          "    payload." +
+          field.name +
+          " = form." +
+          field.name +
+          " === '' ? null : JSON.parse(String(form." +
+          field.name +
+          "));"
+        );
+      }
       if (field.baseType === "boolean") {
         return (
           "    payload." + field.name + " = Boolean(form." + field.name + ");"
@@ -636,7 +706,6 @@ function generateFormPage(ctx, model, editMode, pageDir) {
     pageDir,
     "labs/" +
       ctx.studio.labSlug +
-      "/studios/" +
       ctx.studio.studioSlug +
       "/features/" +
       model.name,
@@ -730,13 +799,13 @@ ${optionalFilter}
     }
   };
 
-  if (loading) return <LoadingState label="Loading ${model.label.toLowerCase()}…" />;
+  if (loading) return <LoadingState label="Loading ${escapeJsx(model.label.toLowerCase())}…" />;
 
   return (
     <div className="page">
       <div className="page-title">
         <div>
-          <h1>{editing ? 'Edit' : 'New'} ${model.label}</h1>
+          <h1>{editing ? 'Edit' : 'New'} ${escapeJsx(model.label)}</h1>
           <p>${model.name} — fields generated from the manifest.</p>
         </div>
         <Link className="button button--ghost" href="${listHref}">
@@ -765,17 +834,40 @@ ${fields.map((field) => formField(field, model)).join("\n")}
 
 function generateTypes(ctx, model) {
   const enums = enumImports(model.fields);
-  // This file is at `features/<model>/domain/`; the studio's `domain/` folder
-  // holds `enums.business.ts` and `src/app` is four levels up.
+  const sourcePath =
+    "src/labs/" +
+    model.labSlug +
+    "/" +
+    model.studioSlug +
+    "/features/" +
+    model.name +
+    "/domain/" +
+    model.name +
+    ".types.ts";
   const lines = [];
   if (enums.length) {
     lines.push(
-      "import type { " + enums.join(", ") + " } from '../../enums.business';",
+      "import type { " +
+        enums.join(", ") +
+        " } from '" +
+        appImportForFile(
+          sourcePath,
+          "src/labs/" +
+            model.labSlug +
+            "/" +
+            model.studioSlug +
+            "/domain/enums.business",
+        ) +
+        "';",
     );
   }
   // JSON columns are typed as `JsonValue`, which has to be imported.
   if (model.fields.some((field) => field.baseType === "json")) {
-    lines.push("import type { JsonValue } from '" + APP_IMPORT + "/api/json';");
+    lines.push(
+      "import type { JsonValue } from '" +
+        appImportForFile(sourcePath, "src/app/api/json") +
+        "';",
+    );
   }
   const members = model.fields
     .map((field) => "  " + field.name + (field.optional ? "?" : "") + ": " + tsType(field) + (field.nullable ? " | null" : "") + ";")
@@ -808,7 +900,18 @@ function generateStudioEnums(ctx, manifest) {
   }
   for (const name of [...referenced].sort()) {
     blocks.push(
-      "export { " + name + " } from '" + APP_IMPORT + "/shared/enums';",
+      "export { " +
+        name +
+        " } from '" +
+        appImportForFile(
+          "src/labs/" +
+            manifest.labSlug +
+            "/" +
+            manifest.studioSlug +
+            "/domain/enums.business.ts",
+          "src/app/shared/enums",
+        ) +
+        "';",
     );
   }
   if (blocks.length === 0) return "export {};\n";
@@ -879,7 +982,7 @@ function addFrontendPages(plan, ctx) {
   for (const manifest of ctx.appManifests) {
     if (manifest.ui.enabled === false) continue;
     const root =
-      "src/labs/" + manifest.labSlug + "/studios/" + manifest.studioSlug;
+      "src/labs/" + manifest.labSlug + "/" + manifest.studioSlug;
     const studioKey = manifest.labSlug + "/" + manifest.studioSlug;
     if (plannedStudios.has(studioKey) && plan.files.has("frontend:" + root + "/domain/enums.business.ts")) {
       continue;

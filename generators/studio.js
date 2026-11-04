@@ -2,7 +2,7 @@
 
 /**
  * Studio-level output: every file inside
- *   src/labs/<lab>/studios/<studio>/
+ *   src/labs/<lab>/<studio>/
  * plus the generator-owned sections of the app-owned helper scripts.
  */
 

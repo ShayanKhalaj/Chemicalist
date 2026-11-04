@@ -148,6 +148,7 @@ function packageJson(ctx) {
     "@types/node": "^22.10.0",
     jest: "^29.7.0",
     prisma: "^6.16.0",
+    dotenv: "^16.4.7",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     typescript: "~5.9.2",
@@ -242,7 +243,8 @@ function prismaConfig(ctx) {
       ? "mongodb://localhost:27017/" + ctx.app.name.replace(/-/g, "_") + "?replicaSet=rs0"
       : "postgresql://localhost:5432/postgres?schema=" + ctx.persistence.schema;
   return [
-    "import { defineConfig, env } from 'prisma/config';",
+    "import 'dotenv/config';",
+    "import { defineConfig } from 'prisma/config';",
     "",
     "export default defineConfig({",
     "  schema: 'prisma/schema.prisma',",
@@ -257,7 +259,7 @@ function prismaConfig(ctx) {
     "",
   ].join("\n").replace(
     /url: process\.env\.DATABASE_URL[^\n]*/,
-    "url: process.env.DATABASE_URL ?? env('DATABASE_URL') ?? " +
+    "url: process.env.DATABASE_URL ?? " +
       JSON.stringify(defaultUrl) +
       ",",
   );
@@ -906,7 +908,7 @@ export class UnitOfWorkModule {}
 // ---------------------------------------------------------------------------
 
 function configFiles(ctx) {
-  const corsOrigin = ctx.app.api.corsOrigin;
+  const corsOrigin = JSON.stringify(ctx.app.api.corsOrigin);
   return `import { z } from 'zod';
 
 /**
@@ -919,9 +921,9 @@ const EnvSchema = z.object({
     .string()
     .min(1)
     .default('postgresql://postgres:postgres@localhost:5432/postgres?schema=${ctx.persistence.schema}'),
-  CORS_ORIGIN: z.string().default('${corsOrigin}'),
+  CORS_ORIGIN: z.string().default(${corsOrigin}),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-${ctx.has("cache") ? "  REDIS_URL: z.string().default('redis://localhost:6379'),\n" : ""}${ctx.has("messaging") ? "  RABBITMQ_URL: z.string().default('amqp://guest:guest@localhost:5672'),\n" : ""}${ctx.has("jwt") ? "  JWT_SECRET: z.string().min(16).default('change-me-in-production'),\n  JWT_EXPIRES_IN: z.string().default('1h'),\n  BOOTSTRAP_USER_EMAIL: z.string().email().optional().or(z.literal('')),\n  BOOTSTRAP_USER_PASSWORD: z.string().min(8).optional().or(z.literal('')),\n" : ""}${ctx.app.hasVersioning ? "  API_VERSION: z.string().default('" + ctx.app.api.version + "'),\n" : ""}
+${ctx.has("cache") ? "  REDIS_URL: z.string().default('redis://localhost:6379'),\n" : ""}${ctx.has("messaging") ? "  RABBITMQ_URL: z.string().default('amqp://guest:guest@localhost:5672'),\n" : ""}${ctx.has("jwt") ? "  JWT_SECRET: z.string().min(16).default('change-me-in-production'),\n  JWT_EXPIRES_IN: z.string().default('1h'),\n  BOOTSTRAP_USER_EMAIL: z.string().email().optional().or(z.literal('')),\n  BOOTSTRAP_USER_PASSWORD: z.string().min(8).optional().or(z.literal('')),\n" : ""}${ctx.app.hasVersioning ? "  API_VERSION: z.string().default(" + JSON.stringify(ctx.app.api.version) + "),\n" : ""}
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;
@@ -1812,11 +1814,28 @@ ${
 `;
 }
 
-function healthModule() {
-  return `import { Module } from '@nestjs/common';
-import { HealthController } from './health.controller';
+function healthModule(ctx = { has: () => false }) {
+  const imports = [];
+  const modules = [];
 
-@Module({ controllers: [HealthController] })
+  if (ctx.has && ctx.has("cache")) {
+    imports.push("import { CacheInfrastructureModule } from '../../../infrastructure/cache/cache.module';");
+    modules.push("CacheInfrastructureModule");
+  }
+  if (ctx.has && ctx.has("messaging")) {
+    imports.push("import { MessagingInfrastructureModule } from '../../communication/messaging/messaging.module';");
+    modules.push("MessagingInfrastructureModule");
+  }
+
+  const importsBlock = imports.length ? imports.join("\n") + "\n" : "";
+  const importsLine = modules.length ? "  imports: [" + modules.join(", ") + "],\n" : "";
+
+  return `import { Module } from '@nestjs/common';
+${importsBlock}import { HealthController } from './health.controller';
+
+@Module({
+${importsLine}  controllers: [HealthController],
+})
 export class HealthModule {}
 `;
 }

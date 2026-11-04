@@ -153,11 +153,11 @@ export class AuditController {
   @Get()
   @RequirePermission('platform.audit:read')
   list(
+    @CurrentIdentity() actor: RequestIdentity,
     @Query('limit') limit?: string,
     @Query('action') action?: string,
     @Query('actorId') actorId?: string,
     @Query('tenantId') tenantId?: string,
-    @CurrentIdentity() actor: RequestIdentity,
   ) {
     if (limit !== undefined && !/^\\d+$/.test(limit)) {
       throw new BadRequestException({ code: 'INVALID_LIMIT', message: 'limit must be a positive integer' });

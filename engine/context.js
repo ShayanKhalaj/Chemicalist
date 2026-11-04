@@ -192,6 +192,35 @@ function buildContext(current, previousStudios = {}, options = {}) {
   }
 
   const reference = appManifests[0];
+  const applicationSettings = (manifest) =>
+    JSON.stringify({
+      name: manifest.app.name,
+      title: manifest.app.title,
+      description: manifest.app.description,
+      api: manifest.app.api,
+      ui: {
+        apiBaseUrl: manifest.ui.apiBaseUrl,
+        theme: {
+          colors: Object.fromEntries(
+            Object.entries(manifest.ui.theme.colors).sort(([a], [b]) =>
+              a < b ? -1 : a > b ? 1 : 0,
+            ),
+          ),
+          typography: Object.fromEntries(
+            Object.entries(manifest.ui.theme.typography).sort(([a], [b]) =>
+              a < b ? -1 : a > b ? 1 : 0,
+            ),
+          ),
+          radius: manifest.ui.theme.radius,
+        },
+      },
+    });
+
+  if (new Set(appManifests.map(applicationSettings)).size > 1) {
+    throw new Error(
+      "Incompatible application settings: every Studio in one application must share app metadata, API settings, UI theme, and API base URL.",
+    );
+  }
 
   // Output configuration must be shared by every Studio.
   if (
@@ -217,6 +246,15 @@ function buildContext(current, previousStudios = {}, options = {}) {
   if (new Set(appManifests.map(persistenceKey)).size > 1) {
     throw new Error(
       "Incompatible persistence configuration: all studios in one application must share provider/database/schema.",
+    );
+  }
+
+  if (
+    new Set(appManifests.map((manifest) => JSON.stringify(manifest.services)))
+      .size > 1
+  ) {
+    throw new Error(
+      "Incompatible infrastructure services: all Studios in one application must share the same services.",
     );
   }
 
@@ -621,7 +659,7 @@ function buildStudioDescriptor(manifest, ctx, relations) {
           model: relation.to,
           field: relation.field,
           fieldName: relation.field.replace(/Id$/, ""),
-          required: Boolean(target && relation.field),
+          required: Boolean(target && relation.required),
         });
       } else if (relation.kind === "collection") {
         collections.push({
@@ -724,11 +762,13 @@ function buildStudioDescriptor(manifest, ctx, relations) {
   return {
     manifest,
 
+    key: studioKey(manifest),
     lab: manifest.lab,
     labSlug: manifest.labSlug,
 
     studio: manifest.studio,
     studioSlug: manifest.studioSlug,
+    title: manifest.ui.title,
 
     // Shared PostgreSQL schema of the owning Lab.
     studioSchema: ctx.studioSchemas

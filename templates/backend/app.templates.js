@@ -1,5 +1,7 @@
 "use strict";
 
+const { kebab } = require("../../engine/naming");
+
 /**
  * Application bootstrap and role files.
  *
@@ -71,10 +73,10 @@ function appModule(ctx) {
       const moduleFile =
         "./labs/" +
         studio.labSlug +
-        "/studios/" +
-        studio.studioSlug +
         "/" +
         studio.studioSlug +
+        "/" +
+        kebab(studio.studio) +
         ".module";
       return "import { " + studio.moduleName + " } from '" + moduleFile + "';";
     })
@@ -161,11 +163,14 @@ export class AppModule {}
 }
 
 function main(ctx) {
+  const apiVersion = JSON.stringify(ctx.app.api.version);
+  const apiPrefix = JSON.stringify(ctx.app.api.prefix);
+  const corsOrigin = JSON.stringify(ctx.app.api.corsOrigin);
   const versioning = ctx.app.hasVersioning
     ? `
     app.enableVersioning({
       type: VersioningType.URI,
-      defaultVersion: process.env.API_VERSION ?? '${ctx.app.api.version}',
+      defaultVersion: process.env.API_VERSION ?? ${apiVersion},
     });`
     : "";
 
@@ -192,10 +197,10 @@ async function bootstrap(): Promise<void> {
   });
   const config = app.get(ConfigService);
 
-  app.setGlobalPrefix('${ctx.app.api.prefix}');${versioning}
+  app.setGlobalPrefix(${apiPrefix});${versioning}
 
   app.enableCors({
-    origin: (config.get<string>('CORS_ORIGIN') ?? '${ctx.app.api.corsOrigin}').split(',').map((origin) => origin.trim()),
+    origin: (config.get<string>('CORS_ORIGIN') ?? ${corsOrigin}).split(',').map((origin) => origin.trim()),
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-correlation-id'],
     exposedHeaders: ['x-request-id'],

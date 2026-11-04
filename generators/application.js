@@ -131,11 +131,7 @@ function generateSchemas(ctx, model) {
   const lines = [];
   const enumsPath = ctx.rel(
     model.paths.schema,
-    "src/labs/" +
-      model.manifest.labSlug +
-      "/studios/" +
-      model.manifest.studioSlug +
-      "/domain/enums/business-enums",
+    model.root + "/domain/enums/business-enums",
   );
 
   lines.push("import { z } from 'zod';");
@@ -329,11 +325,7 @@ function generateDtos(ctx, model) {
         " } from '" +
         ctx.rel(
           model.paths.dto,
-          "src/labs/" +
-            model.manifest.labSlug +
-            "/studios/" +
-            model.manifest.studioSlug +
-            "/domain/enums/business-enums",
+          model.root + "/domain/enums/business-enums",
         ) +
         "';",
     );

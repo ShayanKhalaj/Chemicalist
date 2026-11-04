@@ -159,17 +159,78 @@ function expandCatalog(catalog, studioTemplate, filePath) {
           ...field,
         }));
         const profileFieldNames = profileFields.map((field) => field.name);
+        const rawCustomFields = entity.fields === undefined ? [] : entity.fields;
+        if (!Array.isArray(rawCustomFields)) {
+          issues.push(entityPath + ".fields: must be an array of custom field definitions");
+        }
+        const inheritedFieldNames = new Set(fields.map((field) => field.name));
+        const customFieldNamesSeen = new Set();
+        const customFields = (Array.isArray(rawCustomFields) ? rawCustomFields : [])
+          .filter((field, fieldIndex) => {
+            const fieldPath = entityPath + ".fields[" + fieldIndex + "]";
+            if (!field || typeof field !== "object" || Array.isArray(field)) {
+              issues.push(fieldPath + ": must be a field definition object");
+              return false;
+            }
+            if (
+              typeof field.name !== "string" ||
+              !/^[a-z][A-Za-z0-9]*$/.test(field.name)
+            ) {
+              issues.push(fieldPath + ".name: must be camelCase");
+              return false;
+            }
+            if (inheritedFieldNames.has(field.name) || customFieldNamesSeen.has(field.name)) {
+              issues.push(fieldPath + ".name: duplicate field `" + field.name + "`");
+              return false;
+            }
+            if (
+              ![
+                "string",
+                "text",
+                "uuid",
+                "boolean",
+                "int",
+                "float",
+                "decimal",
+                "date",
+                "datetime",
+                "json",
+                "enum",
+                "array",
+              ].includes(field.type)
+            ) {
+              issues.push(fieldPath + ".type: unsupported field type");
+              return false;
+            }
+            customFieldNamesSeen.add(field.name);
+            return true;
+          });
+        const customFieldNames = customFields.map((field) => field.name);
+        const searchableCustomFields = customFields
+          .filter((field) => ["string", "text"].includes(field.type))
+          .map((field) => field.name);
+        const sortableCustomFields = customFields
+          .filter(
+            (field) =>
+              field.type !== "json" &&
+              field.type !== "array" &&
+              !String(field.type).endsWith("[]"),
+          )
+          .map((field) => field.name);
+        fields.push(...customFields.map((field) => ({ ...field })));
         const modelDto = {
           create: [
             "reference",
             "name",
             "description",
             ...(profile.createFields || profileFieldNames),
+            ...customFieldNames,
           ].filter((fieldName) => fields.some((field) => field.name === fieldName)),
           update: [
             "name",
             "description",
             ...(profile.updateFields || profileFieldNames),
+            ...customFieldNames,
           ].filter((fieldName) => fields.some((field) => field.name === fieldName)),
           query: fields
             .filter(
@@ -203,16 +264,19 @@ function expandCatalog(catalog, studioTemplate, filePath) {
           "create",
           "read",
           "update",
+          "delete",
         ];
         search[modelName] = [
           "reference",
           "name",
           ...(profile.searchFields || []),
+          ...searchableCustomFields,
         ].filter((fieldName, index, values) => values.indexOf(fieldName) === index);
         sort[modelName] = [
           "createdAt",
           "updatedAt",
           ...(profile.sortFields || []),
+          ...sortableCustomFields,
         ].filter((fieldName, index, values) => values.indexOf(fieldName) === index);
       }
 

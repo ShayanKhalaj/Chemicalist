@@ -12,7 +12,7 @@
  */
 
 function configurationFiles(ctx) {
-  const corsOrigin = ctx.app.api.corsOrigin;
+  const corsOrigin = JSON.stringify(ctx.app.api.corsOrigin);
   const defaultDatabaseUrl =
     ctx.persistence.database === 'mongodb'
       ? 'mongodb://localhost:27017/' + ctx.app.name.replace(/-/g, '_')
@@ -30,7 +30,7 @@ const EnvSchema = z.object({
     .string()
     .min(1)
     .default('postgresql://postgres:postgres@localhost:5432/postgres?schema=${ctx.persistence.schema}'),
-  CORS_ORIGIN: z.string().default('${corsOrigin}'),
+  CORS_ORIGIN: z.string().default(${corsOrigin}),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   JWT_SECRET: z.string().min(32).default('development-only-secret-change-before-deploy'),
   JWT_EXPIRES_IN: z.string().default('1h'),

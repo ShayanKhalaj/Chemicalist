@@ -12,12 +12,12 @@ application configuration, infrastructure choices, and UI design tokens.
 
 ## Install the CLI
 
-From this repository, link the command globally:
+Install globally from this repository:
 
 ```powershell
-cd gen
+cd .\gen
 npm install
-npm link
+npm install --global .
 chemicalist --help
 ```
 
@@ -28,23 +28,43 @@ npm install --save-dev C:\path\to\chemicalist\gen
 npx chemicalist --help
 ```
 
+You can also link the checkout for development with `npm link` from `gen`.
+The CLI can then be run from any working directory; generated files and
+manifests are resolved relative to that directory, not the generator install.
+
 You can also invoke it without installing:
 
 ```powershell
 node .\bin\chemicalist.js --help
 ```
 
+## Visual modeling
+
+The local visual modeler lives in `..\chemicalist.studio`. Start it from the
+workspace root with:
+
+```powershell
+cd .\chemicalist.studio
+npm install
+npm run dev
+```
+
+Open the printed localhost address, then load the project's catalog and its
+`studio.manifest.template.json` together. The modeler edits Labs, Studios,
+Entities, custom fields, and relationships on a visual canvas. Export the
+catalog and validate it with the CLI before generating the application.
+
 ## Manifest file layout
 
-For a project named `example`, keep related configuration next to each other:
+Project manifests live beside the project, not inside the generator package:
 
 ```text
-manifests/
-  example.manifest.json                 # Lab, Studio, models and relationships
-  example.config.json                   # App metadata and output targets
-  example.infrastructure.manifest.json # Database, capabilities and services
-  example.frontend.manifest.json        # Whether the admin UI is generated
-  ui.template.json                      # Colors, typography, radius and theme
+chemicalist.manifest.json                 # Lab, Studio, models and relationships
+chemicalist.config.json                   # App metadata and output targets
+chemicalist.infrastructure.manifest.json # Database, capabilities and services
+chemicalist.frontend.manifest.json        # Whether the admin UI is generated
+studio.manifest.template.json             # Enterprise catalog expansion template
+ui.template.json                          # Optional theme settings
 ```
 
 The generator discovers the optional sibling files automatically. You may pass
@@ -58,6 +78,9 @@ The domain manifest describes the Lab/Studio, enums, relationships, operations,
 search/sort fields, and models. For each model, `dtos.create`, `dtos.update`,
 and `dtos.query` explicitly select the fields accepted by generated request
 DTOs. Zod schemas are strict and reject unknown input.
+Array fields in generated create/edit forms use JSON array syntax (for example
+`["red", "blue"]`); invalid JSON is shown as a form error and valid arrays are
+checked by the API schema.
 
 `customMethods` adds safe, equality-based repository methods:
 
@@ -159,30 +182,48 @@ generated CSS. Supported color keys are `background`, `surface`, `surfaceMuted`,
 Validate one or more domain manifests:
 
 ```powershell
-chemicalist validate .\manifests\example.manifest.json
+chemicalist validate .\chemicalist.manifest.json
 ```
 
-Initialize an app. In an interactive terminal, the wizard asks about database,
-Elasticsearch, RabbitMQ, Redis, outbox/inbox/saga, and the webservice/API/UI
-outputs. Selected answers are saved to the sibling config files:
+Start a new project directly in the current working directory:
 
 ```powershell
-chemicalist init .\manifests\example.manifest.json
+mkdir .\my-chemicalist-app
+cd .\my-chemicalist-app
+chemicalist init
 ```
 
-For CI or to accept all existing config defaults without prompts:
+When no manifest exists, the CLI copies the bundled enterprise catalog into
+the current directory as `chemicalist.manifest.json` and creates the local
+application, infrastructure, frontend, and UI configuration files. It does
+not use a manifest from the generator's install directory to generate the app:
+generation reads the copied project-local files, which you can edit freely.
+It does not ask for Lab, Studio, or model names. The wizard asks for RBAC, tenancy, audit and notifications, plus the database
+(PostgreSQL or MongoDB), Redis cache, RabbitMQ messaging, outbox/inbox/saga
+(when messaging is enabled), Elasticsearch, and whether to generate the
+frontend. Enabling tenancy automatically enables RBAC so organization access is
+always tied to an authenticated identity. Selected domains are added to the
+local catalog as Labs and Studios, with model schemas and operation permission
+keys. By default, projects are generated into `chemicalist.backend` and
+`chemicalist.frontend` subdirectories in the current directory.
+
+For CI, `--yes` accepts the default infrastructure choices, and `--no-install`
+skips dependency installation:
 
 ```powershell
-chemicalist init .\manifests\example.manifest.json --yes --no-install
+chemicalist init --yes --no-install
 ```
 
-Override output locations and install dependencies automatically:
+To initialize from an existing domain manifest, pass its path:
 
 ```powershell
-chemicalist init .\manifests\example.manifest.json `
+chemicalist init .\chemicalist.manifest.json `
   --out .\chemicalist.backend `
   --frontend-out .\chemicalist.frontend
 ```
+
+The backend and frontend output directories must be separate and cannot contain
+one another.
 
 For subsequent manifest changes, run `chemicalist generate` with the same
 manifest. If the frontend has not been generated yet, it is bootstrapped on the
@@ -192,8 +233,8 @@ only when you intentionally want to replace local edits in those files.
 Other useful commands:
 
 ```powershell
-chemicalist generate .\manifests\example.manifest.json --dry-run
-chemicalist validate .\manifests\example.manifest.json --json
+chemicalist generate .\chemicalist.manifest.json --dry-run
+chemicalist validate .\chemicalist.manifest.json --json
 chemicalist list --out .\chemicalist.backend
 chemicalist --version
 ```
@@ -258,7 +299,7 @@ docker build -t inventory-suite-ui .
 
 The backend separates platform concerns (`src/platform`), application
 infrastructure (`src/infrastructure`), shared primitives (`src/shared`), and
-business modules (`src/labs/<lab>/studios/<studio>`). It includes identity,
+business modules (`src/labs/<lab>/<studio>`). It includes identity,
 authentication, authorization/RBAC, audit, tenancy, validation, repositories,
 tenant-scoped geographic locations, validation, repositories, and optional
 transport capabilities.

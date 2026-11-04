@@ -42,11 +42,7 @@ function generateController(ctx, model) {
         " } from '" +
         ctx.rel(
           model.paths.controller,
-          'src/labs/' +
-            model.manifest.labSlug +
-            '/studios/' +
-            model.manifest.studioSlug +
-            '/domain/enums/business-enums',
+          model.root + '/domain/enums/business-enums',
         ) +
         "';",
     );

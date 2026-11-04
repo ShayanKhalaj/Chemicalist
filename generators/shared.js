@@ -10,7 +10,7 @@
  *  - every reusable capability with its own responsibility lives in
  *    `src/platform/<area>`,
  *  - `src/infrastructure` holds only application infrastructure (Prisma, cache),
- *  - studio code lives in `src/labs/<lab>/studios/<studio>`.
+ *  - studio code lives in `src/labs/<lab>/<studio>`.
  */
 
 const sharedT = require("../templates/backend/shared.templates");
@@ -85,7 +85,7 @@ function addSharedKernel(plan, ctx) {
   );
   plan.add(
     "src/platform/observability/health/health.module.ts",
-    sharedT.healthModule(),
+    sharedT.healthModule(ctx),
     owner,
   );
 }

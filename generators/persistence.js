@@ -126,7 +126,7 @@ function prismaFieldLine(field, database, enumType) {
         attributes.push(
           field.enumName
             ? "@default(" + field.default + ")"
-            : '@default("' + field.default + '")',
+            : "@default(" + JSON.stringify(field.default) + ")",
         );
       } else if (typeof field.default === "boolean" || typeof field.default === "number") {
         attributes.push("@default(" + field.default + ")");
@@ -1024,7 +1024,7 @@ function studioSchema(ctx, manifest) {
 /** Every schema declared on the datasource: `public` first, then Studio schemas. */
 function prismaSchemas(ctx) {
   const platform = ctx.platformSchema || "public";
-  const studios = [...(ctx.studioSchemas || new Map()).values()]
+  const studios = [...new Set((ctx.studioSchemas || new Map()).values())]
     .filter((schema) => schema !== platform)
     .sort();
   return [platform, ...studios];
@@ -1202,11 +1202,7 @@ function generateMapper(ctx, model) {
         " } from '" +
         ctx.rel(
           model.paths.prismaMapper,
-          "src/labs/" +
-            ctx.studio.manifest.labSlug +
-            "/studios/" +
-            ctx.studio.manifest.studioSlug +
-            "/domain/enums/business-enums",
+          model.root + "/domain/enums/business-enums",
         ) +
         "';",
     );
@@ -1352,6 +1348,13 @@ function linesSafeType(field) {
 
 function generateRepository(ctx, model) {
   const delegate = camel(model.name);
+  const include = includeObject(model);
+  const includeClause = Object.keys(include).length
+    ? ", include: " + JSON.stringify(include)
+    : "";
+  const includeLines = Object.keys(include).length
+    ? ["      include: " + JSON.stringify(include) + ","]
+    : [];
   const fieldKeyType = model.writableFields.length
     ? model.writableFields.map((field) => "'" + field.name + "'").join(" | ")
     : "never";
@@ -1387,7 +1390,7 @@ function generateRepository(ctx, model) {
     if (custom.operation === "findOneBy") {
       customMethodLines.push(
         "  async " + custom.name + "(" + parameters + "): Promise<" + model.name + " | null> {",
-        "    const row = await this.client." + delegate + ".findFirst({ where: " + baseWhere + ", include: " + JSON.stringify(includeObject(model)) + " });",
+        "    const row = await this.client." + delegate + ".findFirst({ where: " + baseWhere + includeClause + " });",
         "    return row ? " + model.names.mapper + ".toDomain(row) : null;",
         "  }",
         "",
@@ -1395,7 +1398,7 @@ function generateRepository(ctx, model) {
     } else if (custom.operation === "findManyBy") {
       customMethodLines.push(
         "  async " + custom.name + "(" + parameters + "): Promise<" + model.name + "[]> {",
-        "    const rows = await this.client." + delegate + ".findMany({ where: " + baseWhere + ", include: " + JSON.stringify(includeObject(model)) + " });",
+        "    const rows = await this.client." + delegate + ".findMany({ where: " + baseWhere + includeClause + " });",
         "    return rows.map((row) => " + model.names.mapper + ".toDomain(row));",
         "  }",
         "",
@@ -1489,7 +1492,7 @@ function generateRepository(ctx, model) {
     "  async findById(id: string): Promise<" + model.name + " | null> {",
     "    const row = await this.client." + delegate + ".findFirst({",
     "      where: this.where({ id }),",
-    "      include: " + JSON.stringify(includeObject(model)) + ",",
+    ...includeLines,
     "    });",
     "    return row ? " + model.names.mapper + ".toDomain(row) : null;",
     "  }",
@@ -1510,7 +1513,7 @@ function generateRepository(ctx, model) {
     "        skip: filter.skip,",
     "        take: filter.take,",
     "        orderBy,",
-    "        include: " + JSON.stringify(includeObject(model)) + ",",
+    ...includeLines,
     "      }),",
     "      this.client." + delegate + ".count({ where }),",
     "    ]);",
@@ -1523,7 +1526,7 @@ function generateRepository(ctx, model) {
     "        ..." + model.names.mapper + ".toCreateData(entity),",
     "        tenantId: TenantContext.require(),",
     "      },",
-    "      include: " + JSON.stringify(includeObject(model)) + ",",
+    ...includeLines,
     "    });",
     "    return " + model.names.mapper + ".toDomain(row);",
     "  }",
@@ -1549,7 +1552,7 @@ function generateRepository(ctx, model) {
     "    const row = await this.client." + delegate + ".update({",
     "      where: { id: existing.id },",
     "      data: " + model.names.mapper + ".toUpdateData(changes),",
-    "      include: " + JSON.stringify(includeObject(model)) + ",",
+    ...includeLines,
     "    });",
     "    return " + model.names.mapper + ".toDomain(row);",
     "  }",

@@ -272,7 +272,7 @@ export function LoginPage({ appTitle }: { appTitle: string }) {
 /**
  * Application shell for the Next.js App Router.
  *
- * Studio screens live in `src/labs/<lab>/studios/<studio>/...`. The generated
+ * Studio screens live in `src/labs/<lab>/<studio>/...`. The generated
  * route tree mirrors that layout:
  *   src/app/<lab>/<studio>/<route>/page.tsx
  *   src/app/<lab>/<studio>/<route>/new/page.tsx
