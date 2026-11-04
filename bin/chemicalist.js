@@ -378,6 +378,27 @@ function runGenerate(options, io, modeWhich = {}) {
     ? planned.results
     : writer.apply(outRoot, planned);
 
+  if (!options.dryRun) {
+    const cleanup = require("../engine/platform-features").pruneSupersededPlatformFiles(
+      outRoot,
+      { registeredStudios: Object.values(nextRegistry.studios) },
+    );
+    if (cleanup.removed.length) {
+      notes.push(
+        "Removed " +
+          cleanup.removed.length +
+          " unchanged legacy Platform file(s) now owned by Labs.",
+      );
+    }
+    if (cleanup.preserved.length) {
+      notes.push(
+        "Kept " +
+          cleanup.preserved.length +
+          " manually modified legacy Platform file(s); review them before deleting.",
+      );
+    }
+  }
+
   const applied = allApplied.filter(
     (file) => file.scope !== "frontend",
   );
@@ -931,6 +952,12 @@ function addSelectedCatalogFeatures(manifestPath, capabilities) {
     addStudio(lab, "Identity", "identity", [{ name: "Account", profile: "identityAccount" }], "Identity accounts and user profiles.");
     addStudio(lab, "Authentication", "authentication", [{ name: "Session", profile: "authenticationSession" }], "Authenticated session lifecycle.");
     addStudio(lab, "Authorization", "authorization", [{ name: "Role", profile: "authorizationGrant" }, { name: "Permission", profile: "authorizationGrant" }], "RBAC roles, permission grants and assignments.");
+    addStudio(lab, "Location", "location", [
+      { name: "Country", profile: "locationCountry" },
+      { name: "Region", profile: "locationRegion" },
+      { name: "City", profile: "locationCity" },
+      { name: "Address", profile: "locationAddress" },
+    ], "Country, region, city and user address management.");
   }
   if (capabilities.tenancy) {
     addLab("Organization", "organization", "Organization ownership, membership and tenant lifecycle.", []);

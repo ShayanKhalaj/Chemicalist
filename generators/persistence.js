@@ -17,6 +17,7 @@
 
 const { snake, camel, constant, kebab, pascal } = require("../engine/naming");
 const { PLATFORM_SCHEMA, studioKey } = require("../engine/context");
+const { destinationPath } = require("../engine/platform-features");
 
 // ---------------------------------------------------------------------------
 // Prisma schema
@@ -1441,7 +1442,10 @@ function generateRepository(ctx, model) {
       ctx.rel(model.paths.repository, "src/infrastructure/database/unit-of-work.service") +
       "';",
     "import { TenantContext } from '" +
-      ctx.rel(model.paths.repository, "src/platform/tenancy/tenant-context") +
+      ctx.rel(
+        model.paths.repository,
+        destinationPath(ctx, "src/platform/tenancy/tenant-context"),
+      ) +
       "';",
     "import { " + model.name + " } from '" + ctx.rel(model.paths.repository, model.paths.domain) + "';",
       ...(customMethodEnums.size

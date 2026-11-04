@@ -3,12 +3,11 @@
 /**
  * Capability catalogue, dependency resolution and incompatibility checks.
  *
- * The Chemicalist platform itself (identity, authentication, authorization,
- * tenancy, audit, notification, files, workflow, module registry, feature
- * flags, search, reporting and integration) is *core*: it is part of every
- * generated application, exactly like `docs/RULES.md` describes. A manifest can
- * only opt into additional transport/performance capabilities (cache, RabbitMQ,
- * outbox, inbox, saga); it cannot switch the platform off.
+ * Core application capabilities are always resolved. For identity, security,
+ * tenancy, audit, notification and location, a registered owning Lab determines
+ * where the runtime is generated; other shared capabilities remain in Platform.
+ * A manifest can opt into additional transport/performance capabilities (cache,
+ * RabbitMQ, outbox, inbox, saga).
  *
  * Legacy manifest names are still accepted:
  *  - `jwt`          -> `identity` (authentication is part of identity)

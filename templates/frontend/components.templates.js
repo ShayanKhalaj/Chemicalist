@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   const login = useCallback(async (identifier: string, password: string) => {
-    const session = await request<SessionPayload>('POST', '/platform/auth/login', { identifier, password });
+    const session = await request<SessionPayload>('POST', '/security/authentication/login', { identifier, password });
     setToken(session.accessToken);
     setTokenState(session.accessToken);
   }, []);

@@ -1920,70 +1920,53 @@ export class CommunicationModule {}
   };
 }
 
-function platformModule() {
+function platformModule(features = {}) {
+  const optionalModules = [
+    ["authorization", "AuthorizationModule", "./authorization/authorization.module"],
+    ["audit", "AuditModule", "./audit/audit.module"],
+    ["identity", "IdentityModule", "./identity/identity.module"],
+    ["authentication", "SecurityModule", "./security/security.module"],
+    ["tenancy", "TenancyModule", "./tenancy/tenancy.module"],
+    ["notification", "NotificationModule", "./notification/notification.module"],
+    ["location", "LocationModule", "./location/location.module"],
+  ].filter(([feature]) => !features[feature]);
+  const modules = [
+    "CommunicationModule",
+    "ConfigurationModule",
+    "FeatureFlagModule",
+    "FilesModule",
+    "IntegrationModule",
+    "ModuleRegistryModule",
+    "ReportingModule",
+    "SearchModule",
+    "WorkflowModule",
+    ...optionalModules.map(([, moduleName]) => moduleName),
+  ];
+  const moduleImports = [
+    "import { CommunicationModule } from './communication/communication.module';",
+    "import { ConfigurationModule } from './configuration/config.module';",
+    "import { FeatureFlagModule } from './configuration/feature-flag/feature-flag.module';",
+    "import { FilesModule } from './files/files.module';",
+    "import { IntegrationModule } from './integration/integration.module';",
+    "import { ModuleRegistryModule } from './modules/module-registry.module';",
+    "import { ReportingModule } from './reporting/reporting.module';",
+    "import { SearchModule } from './search/search.module';",
+    "import { WorkflowModule } from './workflow/workflow.module';",
+    ...optionalModules.map(
+      ([, moduleName, importPath]) =>
+        "import { " + moduleName + " } from '" + importPath + "';",
+    ),
+  ];
   return `import { Module } from '@nestjs/common';
-import { AuthorizationModule } from './authorization/authorization.module';
-import { AuditModule } from './audit/audit.module';
-import { CommunicationModule } from './communication/communication.module';
-import { ConfigurationModule } from './configuration/config.module';
-import { FeatureFlagModule } from './configuration/feature-flag/feature-flag.module';
-import { FilesModule } from './files/files.module';
-import { IdentityModule } from './identity/identity.module';
-import { IntegrationModule } from './integration/integration.module';
-import { LocationModule } from './location/location.module';
-import { ModuleRegistryModule } from './modules/module-registry.module';
-import { NotificationModule } from './notification/notification.module';
-import { ReportingModule } from './reporting/reporting.module';
-import { SearchModule } from './search/search.module';
-import { SecurityModule } from './security/security.module';
-import { TenancyModule } from './tenancy/tenancy.module';
-import { WorkflowModule } from './workflow/workflow.module';
+${moduleImports.join("\n")}
 
-/**
- * The Chemicalist platform layer.
- *
- * Every Lab/Studio depends on this module and none of it owns business data:
- *  - identity + authentication + authorization + tenancy (who is calling, what
- *    may they do, in which organization),
- *  - audit + notification + communication (observability and messaging),
- *  - files + workflow + search + reporting + integration (shared capabilities),
- *  - module registry/entitlements + feature flags (licensing and configuration).
- */
+/** Shared platform capabilities that are not owned by a Lab. */
 @Module({
   imports: [
-    ConfigurationModule,
-    IdentityModule,
-    SecurityModule,
-    AuthorizationModule,
-    TenancyModule,
-    AuditModule,
-    CommunicationModule,
-    NotificationModule,
-    FilesModule,
-    WorkflowModule,
-    ModuleRegistryModule,
-    FeatureFlagModule,
-    SearchModule,
-    ReportingModule,
-    IntegrationModule,
-    LocationModule,
+${modules.map((moduleName) => "    " + moduleName + ",").join("\n")}
   ],
   exports: [
-    IdentityModule,
-    SecurityModule,
-    AuthorizationModule,
-    TenancyModule,
-    AuditModule,
-    CommunicationModule,
-    NotificationModule,
-    FilesModule,
-    WorkflowModule,
-    ModuleRegistryModule,
-    FeatureFlagModule,
-    SearchModule,
-    ReportingModule,
-    IntegrationModule,
-    LocationModule,
+${modules.map((moduleName) => "    " + moduleName + ",").join("\n")}
   ],
 })
 export class PlatformModule {}

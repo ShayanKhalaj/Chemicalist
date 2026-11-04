@@ -3,30 +3,32 @@
 /**
  * Platform layer output.
  *
- * The platform is the shared, non-commercial part of Chemicalist. It is always
- * generated (never a per-manifest optional interface): identity, authentication,
- * authorization, tenancy, audit, notification, files, workflow, module registry
- * & entitlements, feature flags, search, reporting, integration and internal
- * communication.
+ * The platform contains application-wide shared capabilities. When a registered
+ * Lab owns identity, authentication, authorization, location, tenancy, audit or
+ * notifications, that runtime is emitted under the owning Lab instead.
  *
  * Two files are *derived* from the registered manifests:
- *  - `authorization/permission-catalog.ts`: every permission key the application
+ *  - the authorization permission catalog: every permission key the application
  *    knows (platform operations + each studio resource/action),
  *  - `reporting/generated-reports.ts`: one read-only summary per business model.
  */
 
 const { kebab, camel } = require("../engine/naming");
+const {
+  destinationPath,
+  platformModuleFeatures,
+} = require("../engine/platform-features");
 const { buildRegisteredStudios } = require("../engine/context");
 const platform = require("../templates/backend/platform.templates");
 const runtime = require("../templates/backend/platform.runtime.templates");
 
 const PLATFORM_PERMISSIONS = [
-  ["platform.identity", ["read", "write"]],
-  ["platform.authorization", ["read", "write"]],
-  ["platform.audit", ["read"]],
-  ["platform.location", ["read", "write"]],
-  ["platform.tenant", ["read", "write"]],
-  ["platform.notification", ["read", "write"]],
+  ["platform.identity", ["read", "write"], "identity"],
+  ["platform.authorization", ["read", "write"], "authorization"],
+  ["platform.audit", ["read"], "audit"],
+  ["platform.location", ["read", "write"], "location"],
+  ["platform.tenant", ["read", "write"], "tenancy"],
+  ["platform.notification", ["read", "write"], "notification"],
   ["platform.files", ["read", "write"]],
   ["platform.workflow", ["read", "write"]],
   ["platform.modules", ["read", "write"]],
@@ -36,9 +38,11 @@ const PLATFORM_PERMISSIONS = [
   ["platform.integration", ["read", "write"]],
 ];
 
-function platformPermissionKeys() {
-  return PLATFORM_PERMISSIONS.flatMap(([area, actions]) =>
-    actions.map((action) => area + ":" + action),
+function platformPermissionKeys(features = {}) {
+  return PLATFORM_PERMISSIONS.flatMap(([area, actions, owner]) =>
+    features[owner]
+      ? []
+      : actions.map((action) => area + ":" + action),
   );
 }
 
@@ -105,7 +109,7 @@ function businessPermissions(ctx) {
 
 function permissionCatalog(ctx) {
   const business = businessPermissions(ctx);
-  const platformKeys = platformPermissionKeys();
+  const platformKeys = platformPermissionKeys(platformModuleFeatures(ctx));
   const all = [...platformKeys, ...business.map((entry) => entry.key)];
   return [
     "/**",
@@ -183,7 +187,17 @@ function generatedReports(ctx) {
 
 function addPlatform(plan, ctx) {
   const owner = { owner: "platform" };
-  const add = (path, content) => plan.add(path, content, owner);
+  const add = (sourcePath, content) => {
+    const outputPath = destinationPath(ctx, sourcePath);
+    plan.add(
+      outputPath,
+      rewriteFeaturePermissions(
+        rewriteFeatureImports(sourcePath, outputPath, content, ctx),
+        platformModuleFeatures(ctx),
+      ),
+      owner,
+    );
+  };
 
   // ---------------------------------------------------------------- config
   const configuration = platform.configurationFiles(ctx);
@@ -334,11 +348,71 @@ function addPlatform(plan, ctx) {
   );
 
   // ------------------------------------------------------ platform module
-  add("src/platform/platform.module.ts", runtime.platformModule());
+  add(
+    "src/platform/platform.module.ts",
+    runtime.platformModule(platformModuleFeatures(ctx)),
+  );
+}
+
+function rewriteFeatureImports(sourcePath, outputPath, content, ctx) {
+  const path = require("node:path").posix;
+  return content.replace(
+    /(\bfrom\s+['"])(\.[^'"]+)(['"])/g,
+    (match, prefix, specifier, suffix) => {
+      const importedPath = path.normalize(
+        path.join(path.dirname(sourcePath), specifier),
+      );
+      const resolvedPath = destinationPath(ctx, importedPath);
+      if (resolvedPath === importedPath && sourcePath === outputPath) return match;
+
+      let relative = path.relative(path.dirname(outputPath), resolvedPath);
+      if (!relative.startsWith(".")) relative = "./" + relative;
+      return prefix + relative + suffix;
+    },
+  );
+}
+
+function rewriteFeaturePermissions(content, features) {
+  const replacements = [
+    ["platform.identity:read", "lab.security.identity.account:read", "identity"],
+    ["platform.identity:write", "lab.security.identity.account:update", "identity"],
+    ["platform.authorization:read", "lab.security.authorization.role:read", "authorization"],
+    ["platform.authorization:write", "lab.security.authorization.role:update", "authorization"],
+    ["platform.audit:read", "lab.logs.audit.audit-event:read", "audit"],
+    ["platform.location:read", "lab.security.location.country:read", "location"],
+    ["platform.location:write", "lab.security.location.country:update", "location"],
+    ["platform.tenant:read", "lab.organization.tenancy.organization:read", "tenancy"],
+    ["platform.tenant:write", "lab.organization.tenancy.organization:update", "tenancy"],
+    ["platform.notification:write", "lab.messages.notifications.notification:create", "notification"],
+  ];
+  let rewritten = content;
+  for (const [source, target, feature] of replacements) {
+    if (features[feature]) rewritten = rewritten.replaceAll(source, target);
+  }
+  const controllers = [
+    ["platform/identity", "security/identity", "identity"],
+    ["platform/auth", "security/authentication", "authentication"],
+    ["platform/authorization", "security/authorization", "authorization"],
+    ["platform/tenants", "organization/tenancy", "tenancy"],
+    ["platform/audit", "logs/audit", "audit"],
+    ["platform/locations", "security/location", "location"],
+    ["platform/notifications", "messages/notifications", "notification"],
+  ];
+  for (const [source, target, feature] of controllers) {
+    if (features[feature]) {
+      rewritten = rewritten.replaceAll(
+        "@Controller('" + source + "')",
+        "@Controller('" + target + "')",
+      );
+    }
+  }
+  return rewritten;
 }
 
 module.exports = {
   addPlatform,
   platformPermissionKeys,
   businessPermissions,
+  rewriteFeatureImports,
+  rewriteFeaturePermissions,
 };

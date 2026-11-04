@@ -10,6 +10,7 @@
 
 const { enumImports } = require('../engine/ts');
 const { kebab } = require('../engine/naming');
+const { destinationPath } = require('../engine/platform-features');
 
 function permissionKey(model, action) {
   const manifest = model.manifest;
@@ -50,10 +51,16 @@ function generateController(ctx, model) {
 
   lines.push(
     "import { RequirePermission } from '" +
-      ctx.rel(model.paths.controller, 'src/platform/authorization/permissions') +
+      ctx.rel(
+        model.paths.controller,
+        destinationPath(ctx, 'src/platform/authorization/permissions'),
+      ) +
       "';",
     "import { TenantGuard } from '" +
-      ctx.rel(model.paths.controller, 'src/platform/tenancy/tenant.guard') +
+      ctx.rel(
+        model.paths.controller,
+        destinationPath(ctx, 'src/platform/tenancy/tenant.guard'),
+      ) +
       "';",
     "import { " +
       model.names.service +

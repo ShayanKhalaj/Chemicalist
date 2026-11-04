@@ -1,6 +1,7 @@
 "use strict";
 
 const { kebab } = require("../../engine/naming");
+const { hasStudio } = require("../../engine/platform-features");
 
 /**
  * Application bootstrap and role files.
@@ -163,6 +164,12 @@ export class AppModule {}
 }
 
 function main(ctx) {
+  const authenticationPath = hasStudio(ctx, {
+    labSlug: "security",
+    studioSlug: "authentication",
+  })
+    ? "./labs/security/runtime/authentication/auth/auth.service"
+    : "./platform/security/auth/auth.service";
   const apiVersion = JSON.stringify(ctx.app.api.version);
   const apiPrefix = JSON.stringify(ctx.app.api.prefix);
   const corsOrigin = JSON.stringify(ctx.app.api.corsOrigin);
@@ -181,7 +188,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { AuthService } from './platform/security/auth/auth.service';
+import { AuthService } from '${authenticationPath}';
 import { RequestIdMiddleware } from './shared/middleware/request-id.middleware';
 import { RequestContext, type RequestIdentity } from './shared/context/request-context';
 

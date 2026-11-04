@@ -7,6 +7,7 @@
 
 const { capabilityEnv } = require("../../engine/capabilities");
 const { pascal } = require("../../engine/naming");
+const { hasStudio } = require("../../engine/platform-features");
 
 const NODE_VERSION = ">=20";
 
@@ -265,11 +266,17 @@ function prismaConfig(ctx) {
   );
 }
 
-function seedScript() {
+function seedScript(ctx = {}) {
+  const permissionCatalogPath = hasStudio(ctx, {
+    labSlug: "security",
+    studioSlug: "authorization",
+  })
+    ? "../src/labs/security/runtime/authorization/permission-catalog"
+    : "../src/platform/authorization/permission-catalog";
   return [
     "import { PrismaClient } from '@prisma/client';",
     "import { hash } from 'bcryptjs';",
-    "import { ALL_PERMISSION_KEYS } from '../src/platform/authorization/permission-catalog';",
+    "import { ALL_PERMISSION_KEYS } from '" + permissionCatalogPath + "';",
     "",
     "const prisma = new PrismaClient();",
     "",

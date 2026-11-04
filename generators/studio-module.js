@@ -1,5 +1,7 @@
 "use strict";
 
+const { studioRuntimeModules } = require("../engine/platform-features");
+
 /**
  * Studio module: wires controllers, use cases and repository implementations.
  * Shared infrastructure (PrismaService, UnitOfWorkService, OutboxService) comes
@@ -21,6 +23,27 @@ function generateStudioModule(ctx) {
         ctx.rel(ctx.studio.modulePath, 'src/platform/communication/outbox/outbox.module') +
         "';",
     );
+  }
+
+  for (const feature of studioRuntimeModules(
+    ctx,
+    studio.labSlug,
+    studio.studioSlug,
+  )) {
+    const runtimeModuleName = "Runtime" + feature.moduleName;
+    imports.push(
+      "import { " +
+        feature.moduleName +
+        " as " +
+        runtimeModuleName +
+        " } from '" +
+        ctx.rel(
+          studio.modulePath,
+          feature.destination + "/" + feature.moduleFile,
+        ) +
+        "';",
+    );
+    moduleImports.push(runtimeModuleName);
   }
 
   for (const model of studio.models) {
