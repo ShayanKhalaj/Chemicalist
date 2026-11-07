@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "gen",
-    "title": "gen"
+    "title": "Gen"
   },
   "outputs": {
     "webservice": true,

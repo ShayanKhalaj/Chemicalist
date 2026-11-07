@@ -50,7 +50,9 @@ Usage:
   chemicalist generate <manifest.json...> [--out <dir>] [--frontend-out <dir>]
                                  [--force] [--dry-run] [--quiet]
   chemicalist init [manifest.json...] [--out <dir>] [--frontend-out <dir>]
-                                 [--force] [--no-install] [--verbose]
+                                 [--force] [--no-install] [--verbose] [--yes]
+    init asks for the project name first, then infrastructure choices,
+    then generates the backend and admin UI.
   chemicalist list [--out <dir>]
 
 Options:
@@ -247,6 +249,10 @@ function runGenerate(options, io, modeWhich = {}) {
     throw usageError("generate requires at least one manifest path");
   }
 
+  const run = createRunProgress(io, options);
+  try {
+  run.update(0, "Validating manifests", "", true);
+
   // Validate every input manifest before touching the filesystem.
   const manifests = options.manifests.flatMap((manifestPath) =>
     loadAndValidateManifests(path.resolve(manifestPath), undefined, {
@@ -343,8 +349,15 @@ function runGenerate(options, io, modeWhich = {}) {
   // manifest and can generate the complete Prisma schema.
   // ---------------------------------------------------------
 
-  for (const manifest of manifests) {
+  manifests.forEach((manifest, index) => {
     const descriptor = descriptors.get(manifest);
+    const position = index + 1;
+    run.update(
+      phasePercent(5, 68, position, manifests.length),
+      "Building modules  " + position + "/" + manifests.length,
+      manifest.lab + " / " + manifest.studio,
+      true,
+    );
 
     const ctx = buildContext(manifest, nextRegistry.studios, {
       generatorVersion: pkg.version,
@@ -362,7 +375,7 @@ function runGenerate(options, io, modeWhich = {}) {
       models: manifest.models.map((model) => model.name),
       key: descriptor.key,
     });
-  }
+  });
 
   // ---------------------------------------------------------
   // Phase 3: Classify and apply all planned files.
@@ -372,11 +385,26 @@ function runGenerate(options, io, modeWhich = {}) {
 
   const planned = writer.plan(outRoot, outputPlan, {
     force: options.force,
+    onProgress: (current, total, file) => {
+      run.update(
+        phasePercent(68, 82, current, total),
+        "Checking files  " + current + "/" + total,
+        shortTarget(file),
+      );
+    },
   });
 
   const allApplied = options.dryRun
     ? planned.results
-    : writer.apply(outRoot, planned);
+    : writer.apply(outRoot, planned, {
+        onProgress: (current, total, file) => {
+          run.update(
+            phasePercent(82, 100, current, total),
+            "Writing files  " + current + "/" + total,
+            shortTarget(file),
+          );
+        },
+      });
 
   if (!options.dryRun) {
     const cleanup = require("../engine/platform-features").pruneSupersededPlatformFiles(
@@ -447,6 +475,9 @@ function runGenerate(options, io, modeWhich = {}) {
       unchanged: counts.unchanged,
     };
   });
+
+  run.update(100, options.dryRun ? "Dry run complete" : "Generation complete", "", true);
+  run.done();
 
   // ---------------------------------------------------------
   // Phase 4: JSON output.
@@ -645,6 +676,9 @@ function runGenerate(options, io, modeWhich = {}) {
       summary: frontendSummary,
     },
   };
+  } finally {
+    run.done();
+  }
 }
 
 
@@ -653,23 +687,49 @@ function runGenerate(options, io, modeWhich = {}) {
  * project (scaffold + studio pages) and installs each project's own
  * dependencies.
  */
+const APP_NAME_PATTERN = /^[a-z][a-z0-9-]{1,62}$/;
+
 function defaultProjectName(cwd = process.cwd()) {
-  const name = path.basename(path.resolve(cwd))
+  return slugifyProjectName(path.basename(path.resolve(cwd))) || "chemicalist-app";
+}
+
+/** Turns "Inventory Suite" or "inventory-suite" into a package slug. */
+function slugifyProjectName(value) {
+  const slug = String(value || "")
+    .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const valid = /^[a-z]/.test(name) ? name : "chemicalist-" + name;
-  return valid.length >= 2 ? valid.slice(0, 63) : "chemicalist-app";
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 63);
+  return APP_NAME_PATTERN.test(slug) ? slug : "";
+}
+
+/** Display title. A slug becomes title case; a typed phrase is kept. */
+function titleFromProjectName(raw, slug) {
+  const trimmed = String(raw || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (trimmed && trimmed !== slug) return trimmed;
+  return String(slug)
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 async function ensureInitManifest(options, io, cwd = process.cwd()) {
-  if (options.manifests.length > 0) return;
+  if (options.manifests.length > 0) {
+    options.keepExistingManifests = true;
+    return;
+  }
 
   const manifestPath = path.resolve(cwd, "chemicalist.manifest.json");
   if (fs.existsSync(manifestPath)) {
     options.manifests = [manifestPath];
+    options.keepExistingManifests = true;
     return;
   }
+  options.keepExistingManifests = false;
 
   const interactive = stdin.isTTY && stdout.isTTY && !options.yes;
   if (!interactive && !options.yes) {
@@ -701,8 +761,14 @@ async function ensureInitManifest(options, io, cwd = process.cwd()) {
         {
           app: {
             name: projectName,
-            title:
-              path.basename(cwd) || "Chemicalist Industry Platform",
+            title: titleFromProjectName(
+              path.basename(cwd) || projectName,
+              projectName,
+            ),
+            apiPrefix: "api",
+            apiVersion: "1",
+            port: 3000,
+            corsOrigin: "http://localhost:3030",
           },
           outputs: { webservice: true, api: true, frontend: true },
         },
@@ -791,6 +857,71 @@ function progress(io, current, total, label) {
   io.log(chalk.cyan(bar) + " " + chalk.bold(label));
 }
 
+/**
+ * One live line for a long run. On a terminal it rewrites itself; otherwise
+ * it prints a line when the stage changes or the percent moves.
+ */
+function createRunProgress(io, options) {
+  const enabled = !options.quiet && !options.json;
+  const interactive = enabled && Boolean(stdout.isTTY);
+  let lastBucket = -1;
+  let lastStage = "";
+  let open = false;
+
+  function line(percent, stage, detail) {
+    const width = 24;
+    const pct = Math.max(0, Math.min(100, Math.round(percent)));
+    const filled = Math.round((pct / 100) * width);
+    const bar = "[" + "█".repeat(filled) + "░".repeat(width - filled) + "]";
+    const head = bar + "  " + String(pct).padStart(3) + "%  " + stage;
+    const columns = stdout.columns || 100;
+    const room = Math.max(24, columns - head.length - 3);
+    let extra = detail ? "  " + detail : "";
+    if (extra.length > room) extra = "  …" + extra.slice(extra.length - (room - 3));
+    return { pct, bar, stage, extra, text: head + extra };
+  }
+
+  function update(percent, stage, detail, milestone) {
+    if (!enabled) return;
+    const rendered = line(percent, stage, detail);
+    const stable = stage.replace(/\s+\d+\/\d+$/, "");
+    if (!interactive) {
+      const bucket = Math.floor(rendered.pct / 2);
+      if (!milestone && bucket === lastBucket && stable === lastStage) return;
+      lastBucket = bucket;
+      lastStage = stable;
+      io.log(rendered.text);
+      return;
+    }
+    const colored =
+      chalk.cyan(rendered.bar) +
+      "  " +
+      chalk.bold(String(rendered.pct).padStart(3) + "%") +
+      "  " +
+      stage +
+      chalk.dim(rendered.extra);
+    stdout.write("\r\x1b[K" + colored);
+    open = true;
+  }
+
+  function done() {
+    if (open) stdout.write("\n");
+    open = false;
+  }
+
+  return { update, done };
+}
+
+function phasePercent(start, end, current, total) {
+  if (total <= 0) return end;
+  return start + ((end - start) * current) / total;
+}
+
+function shortTarget(file) {
+  const scope = file && file.scope === "frontend" ? "admin UI" : "backend";
+  return scope + "  " + (file && file.path ? file.path : "");
+}
+
 async function configureInit(options, io) {
   const manifests = options.manifests.flatMap((manifestPath) =>
     loadAndValidateManifests(path.resolve(manifestPath)),
@@ -815,6 +946,11 @@ async function configureInit(options, io) {
       saga: base.capabilities.saga === true,
     },
     outputs: { ...base.outputs },
+    projectName: base.app.name,
+    projectTitle:
+      base.app.title && base.app.title !== base.app.name
+        ? base.app.title
+        : titleFromProjectName(base.app.name, base.app.name),
   };
   if (!interactive) return answers;
 
@@ -836,6 +972,39 @@ async function configureInit(options, io) {
     }
   };
   try {
+    io.log("");
+    io.log(chalk.bold.cyan("  Name your project"));
+    io.log(
+      chalk.gray(
+        "  A title such as Inventory Suite becomes the package name inventory-suite.",
+      ),
+    );
+    while (true) {
+      const value = (
+        await prompt.question(
+          "  " +
+            chalk.gray("Project name") +
+            " " +
+            chalk.dim("[" + answers.projectName + "]: "),
+        )
+      ).trim();
+      if (!value) break;
+      const slug = slugifyProjectName(value);
+      if (!slug) {
+        io.log(
+          chalk.yellow(
+            "  Use a Latin name with letters, numbers and spaces, for example Inventory Suite.",
+          ),
+        );
+        continue;
+      }
+      answers.projectName = slug;
+      answers.projectTitle = titleFromProjectName(value, slug);
+      break;
+    }
+    io.log(chalk.gray("  Package name: ") + chalk.bold(answers.projectName));
+    io.log(chalk.gray("  Title: ") + chalk.bold(answers.projectTitle));
+
     io.log("");
     io.log(chalk.bold.cyan("  Configure your application"));
     io.log(chalk.gray("  Press Enter to accept the suggested value."));
@@ -1000,7 +1169,13 @@ function persistInitConfig(manifestPath, answers) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(value, null, 2) + "\n", "utf8");
   };
-  mergeJson(base + ".config.json", { outputs: answers.outputs });
+  mergeJson(base + ".config.json", {
+    app: {
+      name: answers.projectName,
+      title: answers.projectTitle,
+    },
+    outputs: answers.outputs,
+  });
   mergeJson(base + ".infrastructure.manifest.json", {
     persistence: {
       provider: "prisma",
@@ -1024,12 +1199,26 @@ function persistInitConfig(manifestPath, answers) {
   mergeJson(base + ".frontend.manifest.json", { enabled: answers.outputs.frontend });
 }
 
+/**
+ * Writes the catalog and sibling JSON only when init just created them.
+ * Manifests the user already has are the source of truth and stay untouched.
+ */
+function applyInitManifestEdits(options, answers) {
+  if (options.keepExistingManifests || options.dryRun) return false;
+  if (options.manifests.length === 1) {
+    addSelectedCatalogFeatures(options.manifests[0], answers.capabilities);
+  }
+  for (const manifestPath of options.manifests) persistInitConfig(manifestPath, answers);
+  return true;
+}
+
 async function commandInit(options, io) {
   await ensureInitManifest(options, io);
   progress(io, 1, 4, "Loading local manifests");
   const answers = await configureInit(options, io);
-  if (!options.dryRun && options.manifests.length === 1) {
-    addSelectedCatalogFeatures(options.manifests[0], answers.capabilities);
+  const wroteManifests = applyInitManifestEdits(options, answers);
+  if (!wroteManifests && options.keepExistingManifests && !options.quiet) {
+    io.log("  Existing JSON manifests were left unchanged.");
   }
   const generatedCapabilities = {
     identity: answers.capabilities.rbac,
@@ -1044,6 +1233,10 @@ async function commandInit(options, io) {
     saga: answers.capabilities.saga,
   };
   options.overrides = {
+    app: {
+      name: answers.projectName,
+      title: answers.projectTitle,
+    },
     persistence: {
       database: answers.database,
       ...(answers.database === "postgres" ? { schema: answers.schema } : {}),
@@ -1052,12 +1245,7 @@ async function commandInit(options, io) {
     services: answers.services,
     outputs: answers.outputs,
   };
-  if (!options.dryRun) {
-    for (const manifestPath of options.manifests) persistInitConfig(manifestPath, answers);
-  }
-  progress(io, 2, 4, "Preparing project configuration");
   const result = runGenerate(options, io, { frontend: "bootstrap" });
-  progress(io, 3, 4, "Generating backend and admin UI");
   const { installDependencies } = require("../engine/install");
 
   const installs = [];
@@ -1070,7 +1258,14 @@ async function commandInit(options, io) {
   const failures = [];
   for (const dir of installs) {
     if (options.dryRun || options.noInstall) continue;
-    if (!options.quiet) progress(io, 4, 4, "Installing dependencies");
+    if (!options.quiet) {
+      progress(
+        io,
+        installs.indexOf(dir) + 1,
+        installs.length,
+        "Installing dependencies  " + path.basename(dir),
+      );
+    }
     const installed = installDependencies(dir, {
       verbose: options.verbose,
       log: (line) => io.log(line.trimEnd()),
@@ -1246,5 +1441,8 @@ module.exports = {
   parseArgs,
   ensureInitManifest,
   addSelectedCatalogFeatures,
+  applyInitManifestEdits,
+  slugifyProjectName,
+  titleFromProjectName,
   EXIT,
 };

@@ -191,7 +191,12 @@ function plan(root, outputPlan, options = {}) {
   };
   const results = [];
 
-  for (const file of outputPlan.sorted()) {
+  const plannedFiles = outputPlan.sorted();
+  for (let index = 0; index < plannedFiles.length; index += 1) {
+    const file = plannedFiles[index];
+    if (typeof options.onProgress === "function") {
+      options.onProgress(index + 1, plannedFiles.length, file);
+    }
     const scope = file.scope === "frontend" ? "frontend" : "backend";
     const fileRoot = scope === "frontend" ? frontendRoot : backendRoot;
     const state = states[scope];
@@ -213,11 +218,6 @@ function plan(root, outputPlan, options = {}) {
 
       if (same) {
         entry.status = "unchanged";
-      } else if (file.owner === PRESERVED_OWNER) {
-        // One-time scaffold (e.g. the frontend project skeleton): existing
-        // files are never rewritten, not even with --force.
-        entry.status = "preserved";
-        entry.reason = "existing bootstrap scaffold is preserved";
       } else {
         const previous =
           state.files[file.path] ||
@@ -316,7 +316,11 @@ function apply(root, planned, options = {}) {
   };
   const applied = [];
 
-  for (const entry of planned.results) {
+  for (let index = 0; index < planned.results.length; index += 1) {
+    const entry = planned.results[index];
+    if (typeof options.onProgress === "function") {
+      options.onProgress(index + 1, planned.results.length, entry);
+    }
     if (entry.status === "preserved" || entry.status === "skipped") {
       // Written by an earlier generation; left exactly as it is.
       applied.push(entry);

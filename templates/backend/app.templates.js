@@ -1,6 +1,6 @@
 "use strict";
 
-const { kebab } = require("../../engine/naming");
+const { kebab, pascal } = require("../../engine/naming");
 const { hasStudio } = require("../../engine/platform-features");
 
 /**
@@ -69,18 +69,32 @@ export function findStudio(labSlug: string, studioSlug: string): StudioDescripto
 }
 
 function appModule(ctx) {
-  const studioImports = (ctx.registeredStudios || ctx.studios)
-    .map((studio) => {
-      const moduleFile =
-        "./labs/" +
-        studio.labSlug +
-        "/" +
-        studio.studioSlug +
-        "/" +
-        kebab(studio.studio) +
-        ".module";
-      return "import { " + studio.moduleName + " } from '" + moduleFile + "';";
-    })
+  const studioBindings = (ctx.registeredStudios || ctx.studios).map((studio) => {
+    const moduleFile =
+      "./labs/" +
+      studio.labSlug +
+      "/" +
+      studio.studioSlug +
+      "/" +
+      kebab(studio.studio) +
+      ".module";
+    return {
+      alias: pascal(studio.labSlug) + studio.moduleName,
+      moduleName: studio.moduleName,
+      moduleFile,
+    };
+  });
+  const studioImports = studioBindings
+    .map(
+      (studio) =>
+        "import { " +
+        studio.moduleName +
+        " as " +
+        studio.alias +
+        " } from '" +
+        studio.moduleFile +
+        "';",
+    )
     .join("\n");
 
   const platformImports = [
@@ -135,9 +149,7 @@ function appModule(ctx) {
     imports.push("SagaModule");
   }
 
-  const studioModules = (ctx.registeredStudios || ctx.studios).map(
-    (studio) => studio.moduleName,
-  );
+  const studioModules = studioBindings.map((studio) => studio.alias);
 
   return `import { Module } from '@nestjs/common';
 ${platformImports.join("\n")}
@@ -284,6 +296,20 @@ function jestE2e() {
   );
 }
 
+function enumSearchValues(manifest, model) {
+  const values = {};
+  for (const name of model.searchFields || []) {
+    const field = model.fields.find((item) => item.name === name);
+    if (!field || field.baseType !== "enum") continue;
+    const enumeration = (manifest.enums || []).find(
+      (item) => item.name === field.enumName,
+    );
+    const value = field.default || (enumeration && enumeration.values[0]);
+    if (typeof value === "string") values[name] = value;
+  }
+  return values;
+}
+
 function applyRegistryScript(ctx) {
   const models = ctx.appManifests.flatMap((manifest) =>
     manifest.models.map((model) => ({ manifest, model })),
@@ -323,6 +349,9 @@ function applyRegistryScript(ctx) {
         "    searchFields: " +
         JSON.stringify(model.searchFields) +
         ",\n" +
+        "    enumSearch: " +
+        JSON.stringify(enumSearchValues(manifest, model)) +
+        ",\n" +
         "    label: " +
         JSON.stringify(model.label) +
         ",\n" +
@@ -358,6 +387,7 @@ interface ModelSpec {
   };
   tenantScoped: boolean;
   searchFields: string[];
+  enumSearch: Record<string, string>;
   label: string;
   variable: string;
 }
@@ -416,7 +446,7 @@ function seedFactory(spec: ModelSpec, tenantId: string | undefined): (index: num
       ...(tenantId ? { tenantId } : {}),
     };
     for (const field of spec.searchFields) {
-      base[field] = 'Demo ' + field + ' #' + index;
+      base[field] = spec.enumSearch[field] ?? ('Demo ' + field + ' #' + index);
     }
     return base;
   };

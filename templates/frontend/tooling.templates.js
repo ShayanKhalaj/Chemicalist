@@ -96,7 +96,7 @@ function indexHtml(ctx) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f766e" />
-    <title>${escapeHtml(ctx.app.ui.title)}</title>
+    <title>${escapeHtml(ctx.app.title)}</title>
   </head>
   <body />
 </html>
@@ -112,7 +112,7 @@ function apiClient(ctx) {
  * (${ctx.app.urlPrefix(false)}), which the Next.js config proxies to the NestJS server.
  */
 const explicitBase = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\\/+$/, '');
-const apiPrefix = '${ctx.app.urlPrefix(false)}';
+const apiPrefix = '${ctx.app.urlPrefix(Boolean(ctx.app.hasVersioning))}';
 
 export const TOKEN_STORAGE_KEY = 'chemicalist.access-token';
 
@@ -125,8 +125,17 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string | null): void {
-  if (token) window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  else window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  if (token) {
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    document.cookie =
+      TOKEN_STORAGE_KEY +
+      '=' +
+      encodeURIComponent(token) +
+      '; Path=/; SameSite=Lax';
+  } else {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    document.cookie = TOKEN_STORAGE_KEY + '=; Path=/; Max-Age=0; SameSite=Lax';
+  }
 }
 
 export function apiUrl(path: string): string {
@@ -222,7 +231,7 @@ function apiServer(ctx) {
 import { cookies } from 'next/headers';
 
 const apiBase = (process.env.API_URL ?? 'http://localhost:${ctx.app.api.port}').replace(/\\/+$/, '');
-const apiPrefix = '${ctx.app.urlPrefix(false)}';
+const apiPrefix = '${ctx.app.urlPrefix(Boolean(ctx.app.hasVersioning))}';
 
 export class ServerApiError extends Error {
   constructor(
@@ -326,9 +335,9 @@ export interface JsonObject {
 }
 
 function layout(ctx) {
-  const title = JSON.stringify(ctx.app.ui.title);
+  const title = JSON.stringify(ctx.app.title);
   const description = JSON.stringify(
-    ctx.app.description || ctx.app.ui.title,
+    ctx.app.description || ctx.app.title,
   );
   return `import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -569,10 +578,13 @@ td.wrap { white-space: normal; max-width: 320px; }
 
 function envExample(ctx) {
   return [
-    '# Copy to .env.local when the API is not reachable through the Vite proxy.',
-    '# VITE_API_URL=http://localhost:' + ctx.app.api.port,
-    '',
-  ].join('\n');
+    "# Copy to .env.local when the admin UI should call another API origin.",
+    "# Leave NEXT_PUBLIC_API_URL unset to use the Next.js rewrite proxy.",
+    "API_PROXY_TARGET=http://localhost:" + ctx.app.api.port,
+    "API_URL=http://localhost:" + ctx.app.api.port,
+    "# NEXT_PUBLIC_API_URL=http://localhost:" + ctx.app.api.port,
+    "",
+  ].join("\n");
 }
 
 function gitignore() {

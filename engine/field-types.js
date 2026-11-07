@@ -46,6 +46,8 @@ const RESERVED_FIELD_NAMES = new Set([
   "override",
   "accessor",
 ]);
+/** Valid after quoting, so a manifest may use them as field names. */
+const QUOTED_FIELD_NAMES = new Set(["public"]);
 
 /** Name of the implicit primary key column added to every model. */
 const ID_FIELD = "id";
@@ -78,7 +80,7 @@ function normalizeField(rawField, path, enums) {
       "the primary key field `id` is generated automatically; remove it from the manifest",
     );
   }
-  if (RESERVED_FIELD_NAMES.has(name)) {
+  if (RESERVED_FIELD_NAMES.has(name) && !QUOTED_FIELD_NAMES.has(name)) {
     throw normalizationError(
       path + ".name",
       "`" + name + "` is reserved by TypeScript and cannot be a model field",
@@ -246,7 +248,11 @@ function normalizeField(rawField, path, enums) {
     "createdAt",
     "updatedAt",
   ];
-  if (positional.includes(name)) {
+  const declaredTimestamp =
+    (name === "createdAt" || name === "updatedAt") &&
+    type === "datetime" &&
+    !isArray;
+  if (positional.includes(name) && !declaredTimestamp) {
     throw normalizationError(
       fieldPath + ".name",
       "`" + name + "` is reserved and generated automatically",
@@ -306,7 +312,7 @@ function idField() {
 }
 
 /** The implicit timestamp fields (managed by the database). */
-function systemFields() {
+function systemFields(overrides = new Map()) {
   const base = {
     isArray: false,
     enumName: null,
@@ -318,11 +324,18 @@ function systemFields() {
     primaryKey: false,
     baseType: "datetime",
     type: "datetime",
+    readOnly: true,
   };
-  return [
-    { ...base, name: "createdAt", path: "createdAt", label: "Created At" },
-    { ...base, name: "updatedAt", path: "updatedAt", label: "Updated At" },
-  ];
+  return ["createdAt", "updatedAt"].map((name) => {
+    const declared = overrides.get(name);
+    return {
+      ...base,
+      name,
+      path: name,
+      label: declared && declared.label ? declared.label : name === "createdAt" ? "Created At" : "Updated At",
+      index: declared ? declared.index === true : false,
+    };
+  });
 }
 
 /** Fields that are user-writable (excludes system-managed columns). */
@@ -345,7 +358,7 @@ function normalizeModel(rawModel, index, enums) {
     throw normalizationError(path + ".label", "must be a string");
   }
 
-  const seen = new Set([ID_FIELD, "createdAt", "updatedAt"]);
+  const seen = new Set([ID_FIELD]);
   const normalizedFields = fields.map((field, fieldIndex) => {
     const normalized = normalizeField(
       field,
@@ -361,14 +374,22 @@ function normalizeModel(rawModel, index, enums) {
     seen.add(normalized.name);
     return normalized;
   });
+  const timestamps = new Map(
+    normalizedFields
+      .filter((field) => field.name === "createdAt" || field.name === "updatedAt")
+      .map((field) => [field.name, field]),
+  );
+  const writableFields = normalizedFields.filter(
+    (field) => field.name !== "createdAt" && field.name !== "updatedAt",
+  );
 
   return {
     name: rawModel.name,
     label: rawModel.label || humanize(rawModel.name),
     path,
     id: idField(),
-    fields: [idField(), ...normalizedFields, ...systemFields()],
-    writableFields: normalizedFields,
+    fields: [idField(), ...writableFields, ...systemFields(timestamps)],
+    writableFields,
     relations: [],
     searchFields: [],
     sortFields: [],

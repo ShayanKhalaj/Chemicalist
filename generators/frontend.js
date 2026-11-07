@@ -214,6 +214,32 @@ function featureFlags(model) {
   };
 }
 
+/**
+ * Page generators receive one model at a time, including models that belong
+ * to studios other than the studio currently being planned. The resource path
+ * is relative to the API prefix; the API client adds `/api` or `/api/v1`.
+ */
+function screenModel(ctx, manifest, model) {
+  const route = kebabPlural(model.name);
+  return {
+    ...model,
+    labSlug: manifest.labSlug,
+    studioSlug: manifest.studioSlug,
+    studioTitle:
+      manifest.ui && manifest.ui.title ? manifest.ui.title : manifest.studio,
+    searchable: Array.isArray(model.searchFields) && model.searchFields.length > 0,
+    route,
+    apiPath: "/" + manifest.labSlug + "/" + manifest.studioSlug + "/" + route,
+  };
+}
+
+function featureImport(pageDir, model) {
+  return labsImportFor(
+    pageDir,
+    "labs/" + model.labSlug + "/" + model.studioSlug + "/features/" + model.name,
+  );
+}
+
 
 /**
  * List screen — a Next.js Server Component.
@@ -254,14 +280,7 @@ export default function ${model.name}ListPage() {
   );
   const api = model.apiPath;
   const appImport = appImportFor(pageDir);
-  const featureRoot = labsImportFor(
-    pageDir,
-    "labs/" +
-      ctx.studio.labSlug +
-      ctx.studio.studioSlug +
-      "/features/" +
-      model.name,
-  );
+  const featureRoot = featureImport(pageDir, model);
 
   return `import Link from 'next/link';
 import { serverRequest, ServerApiError } from '${appImport}/api/server';
@@ -539,12 +558,36 @@ function formField(field, model) {
  * `mode === "edit"` reads the record id from the `[id]` route segment and
  * loads it on mount; `mode === "create"` starts from an empty form.
  */
+function formFields(model, editMode) {
+  const selected = editMode ? model.dtoFields && model.dtoFields.update : model.dtoFields && model.dtoFields.create;
+  const names = Array.isArray(selected) ? selected : null;
+  return model.writableFields.filter(
+    (field) =>
+      !field.generatedByRelation &&
+      (names === null || names.includes(field.name)),
+  );
+}
+
 function generateFormPage(ctx, model, editMode, pageDir) {
-  const fields = model.writableFields;
+  const fields = formFields(model, editMode);
   const initial = fields
     .map((field) => {
-      if (field.baseType === "boolean") return "    " + field.name + ": false,";
+      if (field.baseType === "boolean") {
+        return "    " + field.name + ": " + (field.default === true ? "true" : "false") + ",";
+      }
       if (field.isArray) return "    " + field.name + ": '[]',";
+      if (field.baseType === "enum") {
+        const initialValue =
+          typeof field.default === "string"
+            ? field.default
+            : field.optional
+              ? ""
+              : (field.enumValues && field.enumValues[0]) || "";
+        return "    " + field.name + ": " + JSON.stringify(initialValue) + ",";
+      }
+      if (field.default !== undefined && field.default !== null && !field.isArray) {
+        return "    " + field.name + ": " + JSON.stringify(String(field.default)) + ",";
+      }
       return "    " + field.name + ": '',";
     })
     .join("\n");
@@ -702,16 +745,9 @@ function generateFormPage(ctx, model, editMode, pageDir) {
 
   const api = model.apiPath;
   const appImport = appImportFor(pageDir);
-  const featureRoot = labsImportFor(
-    pageDir,
-    "labs/" +
-      ctx.studio.labSlug +
-      ctx.studio.studioSlug +
-      "/features/" +
-      model.name,
-  );
+  const featureRoot = featureImport(pageDir, model);
   const listHref =
-    "/" + ctx.studio.labSlug + "/" + ctx.studio.studioSlug + "/" + kebabPlural(model.name);
+    "/" + model.labSlug + "/" + model.studioSlug + "/" + (model.route || kebabPlural(model.name));
   const editing = editMode === true;
   const componentName = model.name + (editing ? "EditPage" : "CreatePage");
 
@@ -722,7 +758,7 @@ function generateFormPage(ctx, model, editMode, pageDir) {
   return `'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { ${editing ? "useParams, " : ""}useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { request, errorMessages } from '${appImport}/api/client';
 import { ErrorState, LoadingState } from '${appImport}/components/ui';
@@ -963,7 +999,13 @@ function addFrontendScaffold(plan, ctx) {
   plan.add(FRONTEND_ROOT + "src/app/components/AppShell.tsx", components.appShell(enriched), owner);
   plan.add(FRONTEND_ROOT + "src/app/components/LoginPage.tsx", components.loginPage(), owner);
   plan.add(FRONTEND_ROOT + "src/app/components/providers.tsx", tooling.providers(), owner);
-  plan.add(FRONTEND_ROOT + "src/app/auth/AuthContext.tsx", components.authContext(), owner);
+  const loginPath = (ctx.studios || []).some(
+    (studio) =>
+      studio.labSlug === "security" && studio.studioSlug === "authentication",
+  )
+    ? "/security/authentication/login"
+    : "/platform/auth/login";
+  plan.add(FRONTEND_ROOT + "src/app/auth/AuthContext.tsx", components.authContext(loginPath), owner);
   plan.add(FRONTEND_ROOT + "src/app/shared/enums.ts", tooling.sharedEnums(ctx), owner);
 }
 
@@ -1012,28 +1054,29 @@ function addFrontendPages(plan, ctx) {
       const createDir = listDir + "/new";
       const editDir = listDir + "/[id]/edit";
 
-      plan.add(featureRoot + "/domain/" + model.name + ".types.ts", generateTypes(ctx, model), modelOwner);
-      plan.add(routeSegments + "/page.tsx", generateListPage(ctx, model, listDir), modelOwner);
-      if (model.searchFields && model.searchFields.length > 0) {
+      const screen = screenModel(ctx, manifest, model);
+      const canCreate = screen.operations.includes("create");
+      const canUpdate = screen.operations.includes("update");
+      plan.add(featureRoot + "/domain/" + model.name + ".types.ts", generateTypes(ctx, screen), modelOwner);
+      plan.add(routeSegments + "/page.tsx", generateListPage(ctx, screen, listDir), modelOwner);
+      if (screen.searchable) {
         plan.add(
           featureRoot + "/components/" + model.name + "Search.tsx",
-          generateSearchClient(ctx, model),
+          generateSearchClient(ctx, screen),
           modelOwner,
         );
       }
-      const canCreate = model.operations.includes("create");
-      const canUpdate = model.operations.includes("update");
       if (canCreate) {
         plan.add(
           routeSegments + "/new/page.tsx",
-          generateFormPage(ctx, model, false, createDir),
+          generateFormPage(ctx, screen, false, createDir),
           modelOwner,
         );
       }
       if (canUpdate) {
         plan.add(
           routeSegments + "/[id]/edit/page.tsx",
-          generateFormPage(ctx, model, true, editDir),
+          generateFormPage(ctx, screen, true, editDir),
           modelOwner,
         );
       }

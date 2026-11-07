@@ -600,6 +600,36 @@ function generateMapperContract(ctx, model) {
 // Use cases / application service
 // ---------------------------------------------------------------------------
 
+function searchClauses(ctx, model) {
+  const lines = [];
+  for (const name of model.searchFields) {
+    const field = model.writableFields.find((item) => item.name === name);
+    if (field && field.baseType === "enum") {
+      const enumeration = (ctx.studio.manifest.enums || []).find(
+        (item) => item.name === field.enumName,
+      );
+      for (const value of (enumeration && enumeration.values) || []) {
+        lines.push(
+          "      if (search.toLowerCase() === " +
+            JSON.stringify(String(value).toLowerCase()) +
+            ") clauses.push({ " +
+            name +
+            ": " +
+            JSON.stringify(value) +
+            " });",
+        );
+      }
+      continue;
+    }
+    lines.push(
+      "      clauses.push({ " +
+        name +
+        ": { contains: search, mode: 'insensitive' } });",
+    );
+  }
+  return lines;
+}
+
 function generateUseCases(ctx, model) {
   const enums = enumImports(model.writableFields);
   const root = model.root;
@@ -738,16 +768,12 @@ function generateUseCases(ctx, model) {
   }
   if (model.searchFields.length) {
     filterLines.push(
-      "    const search = query.search;",
+      "    const search = typeof query.search === 'string' ? query.search.trim() : '';",
       "    if (search) {",
-      "      where.OR = [",
-      ...model.searchFields.map(
-        (name) =>
-          "        { " +
-          name +
-          ": { contains: search, mode: 'insensitive' } },",
-      ),
-      "      ];",
+      "      const clauses: Record<string, unknown>[] = [];",
+      ...searchClauses(ctx, model),
+      "      if (clauses.length > 0) where.OR = clauses;",
+      "      else where.id = { in: [] };",
       "    }",
     );
   } else {

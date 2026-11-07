@@ -5,6 +5,8 @@
  * declaration helpers that enforce the required/optional/nullable rules.
  */
 
+const { RESERVED_WORDS } = require("./naming");
+
 const TS_OF_BASE = {
   string: "string",
   text: "string",
@@ -40,9 +42,13 @@ function tsValueType(field) {
  *   optional              -> `name?: T`
  *   optional + nullable   -> `name?: T | null`
  */
+function tsMember(name) {
+  return RESERVED_WORDS.has(name) ? JSON.stringify(name) : name;
+}
+
 function classProperty(field) {
   const assertion = field.optional ? "?" : "!";
-  return "  " + field.name + assertion + ": " + tsValueType(field) + ";";
+  return "  " + tsMember(field.name) + assertion + ": " + tsValueType(field) + ";";
 }
 
 /**
@@ -56,7 +62,7 @@ function property(field, options = {}) {
   const optional = options.forceOptional === true || field.optional;
   const nullable = options.dropNullable ? false : field.nullable;
   const type = nullable ? tsType(field) + " | null" : tsType(field);
-  return "  " + field.name + (optional ? "?" : "") + ": " + type + ";";
+  return "  " + tsMember(field.name) + (optional ? "?" : "") + ": " + type + ";";
 }
 
 /** Update DTO: every field optional, value type unchanged (nullable preserved). */

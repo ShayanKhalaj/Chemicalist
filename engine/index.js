@@ -62,8 +62,9 @@ function plan(ctx, outputPlan, options = {}) {
     if (isFirstStudioForApp) frontend.addFrontendScaffold(outputPlan.forFrontend(), ctx);
     frontend.addFrontendPages(outputPlan.forFrontend(), ctx);
   } else if (frontendMode === "studios") {
-    // The backend is always generated before the UI: a studio's screens are
-    // only regenerated when the project itself has been bootstrapped.
+    // Refresh the shell when it still matches the last generation, so new
+    // studios and generator fixes reach the admin UI. Manual edits conflict.
+    if (isFirstStudioForApp) frontend.addFrontendScaffold(outputPlan.forFrontend(), ctx);
     frontend.addFrontendPages(outputPlan.forFrontend(), ctx);
   }
 

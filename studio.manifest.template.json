@@ -464,6 +464,59 @@
       "sortFields": ["joinedAt", "invitationExpiresAt"],
       "operations": ["create", "read", "update"]
     },
+    "locationCountry": {
+      "description": "Country and calling-code reference data scoped to an organization.",
+      "fields": [
+        { "name": "code", "type": "string", "required": true, "unique": true, "index": true },
+        { "name": "countryName", "type": "string", "required": true, "index": true },
+        { "name": "nativeName", "type": "string", "required": false, "nullable": true },
+        { "name": "phoneCode", "type": "string", "required": false, "nullable": true },
+        { "name": "isActive", "type": "boolean", "required": true, "default": true, "index": true }
+      ],
+      "searchFields": ["code", "countryName", "nativeName"],
+      "operations": ["create", "read", "update"]
+    },
+    "locationRegion": {
+      "description": "A region within a country.",
+      "fields": [
+        { "name": "countryReference", "type": "string", "required": true, "index": true },
+        { "name": "code", "type": "string", "required": true, "index": true },
+        { "name": "regionName", "type": "string", "required": true, "index": true },
+        { "name": "isActive", "type": "boolean", "required": true, "default": true, "index": true }
+      ],
+      "searchFields": ["countryReference", "code", "regionName"],
+      "operations": ["create", "read", "update"]
+    },
+    "locationCity": {
+      "description": "A city within a region and country.",
+      "fields": [
+        { "name": "countryReference", "type": "string", "required": true, "index": true },
+        { "name": "regionReference", "type": "string", "required": true, "index": true },
+        { "name": "code", "type": "string", "required": true, "index": true },
+        { "name": "cityName", "type": "string", "required": true, "index": true },
+        { "name": "isActive", "type": "boolean", "required": true, "default": true, "index": true }
+      ],
+      "searchFields": ["countryReference", "regionReference", "code", "cityName"],
+      "operations": ["create", "read", "update"]
+    },
+    "locationAddress": {
+      "description": "A user's postal address with validated geographic references.",
+      "fields": [
+        { "name": "userReference", "type": "string", "required": true, "index": true },
+        { "name": "countryReference", "type": "string", "required": true, "index": true },
+        { "name": "regionReference", "type": "string", "required": true, "index": true },
+        { "name": "cityReference", "type": "string", "required": true, "index": true },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "addressLine1", "type": "string", "required": true },
+        { "name": "addressLine2", "type": "string", "required": false, "nullable": true },
+        { "name": "postalCode", "type": "string", "required": false, "nullable": true },
+        { "name": "latitude", "type": "decimal", "required": false, "nullable": true },
+        { "name": "longitude", "type": "decimal", "required": false, "nullable": true },
+        { "name": "isDefault", "type": "boolean", "required": true, "default": false }
+      ],
+      "searchFields": ["userReference", "title", "postalCode"],
+      "operations": ["create", "read", "update", "delete"]
+    },
     "identityAccount": {
       "description": "Identity account profile. Authentication secrets are deliberately excluded.",
       "fields": [

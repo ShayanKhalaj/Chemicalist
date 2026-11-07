@@ -954,9 +954,7 @@ function generatePrismaSchema(ctx) {
         );
       }
 
-      const fieldIndexes = uniqueIndexDeclarations(
-        model.writableFields || [],
-      );
+      const fieldIndexes = uniqueIndexDeclarations(model.fields || []);
 
       lines.push(
         "  deletedAt DateTime?",

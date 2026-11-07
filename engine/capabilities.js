@@ -176,6 +176,89 @@ const CAPABILITY_DEFINITIONS = {
     packages: [],
     env: {},
   },
+  commandBus: {
+    description: "Command dispatch over the messaging transport.",
+    requires: ["messaging"],
+    packages: [],
+    env: {},
+  },
+  queryBus: {
+    description: "Request/response query dispatch over the messaging transport.",
+    requires: ["messaging"],
+    packages: [],
+    env: {},
+  },
+  schemaRegistry: {
+    description: "Versioned registry for published message contracts.",
+    requires: ["messaging"],
+    packages: [],
+    env: {},
+  },
+  deadLetterQueue: {
+    description: "Dead-letter handling for messages that exhaust retries.",
+    requires: ["messaging"],
+    packages: [],
+    env: {},
+  },
+  eventDriven: {
+    description:
+      "Studios integrate through versioned events, commands, and queries.",
+    requires: ["messaging"],
+    packages: [],
+    env: {},
+  },
+  i18n: {
+    description: "Locale-aware labels and translated values.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
+  mfa: {
+    description: "Multi-factor authentication on top of identity.",
+    requires: ["identity"],
+    packages: [],
+    env: {},
+  },
+  rateLimiting: {
+    description: "Request rate limiting.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
+  encryptionInTransit: {
+    description:
+      "Declares that traffic is encrypted in transit by the deployment.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
+  encryptionAtRest: {
+    description:
+      "Declares that stored data is encrypted at rest by the database and object store.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
+  clinicalAccessAudit: {
+    description: "Clinical record access is written to the audit trail.",
+    requires: ["audit"],
+    packages: [],
+    env: {},
+  },
+  directStudioDependencies: {
+    description:
+      "When enabled, studios may depend on each other directly. Leave false to keep studios isolated.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
+  crossStudioForeignKeys: {
+    description:
+      "When enabled, persistence may use foreign keys across studios. Leave false to store references only.",
+    requires: [],
+    packages: [],
+    env: {},
+  },
 };
 
 /** Capabilities that every generated application has, regardless of the manifest. */
@@ -187,6 +270,7 @@ const CORE_CAPABILITIES = Object.keys(CAPABILITY_DEFINITIONS).filter(
 const CAPABILITY_ALIASES = {
   jwt: "identity",
   tenantScope: "tenancy",
+  integrations: "integration",
 };
 
 const CAPABILITY_NAMES = Object.keys(CAPABILITY_DEFINITIONS);

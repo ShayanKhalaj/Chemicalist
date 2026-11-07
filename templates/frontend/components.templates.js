@@ -153,8 +153,9 @@ export function ConfirmDialog({
 `;
 }
 
-function authContext() {
+function authContext(loginPath) {
   return `import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { getToken, onUnauthorized, request, setToken } from '../api/client';
 import type { SessionPayload, TokenClaims } from '../api/types';
 
@@ -181,6 +182,7 @@ export function decodeClaims(token: string): TokenClaims | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [token, setTokenState] = useState<string | null>(() => {
     const stored = getToken();
     return stored && decodeClaims(stored) ? stored : null;
@@ -189,17 +191,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setToken(null);
     setTokenState(null);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   useEffect(() => {
     onUnauthorized(() => logout());
   }, [logout]);
 
   const login = useCallback(async (identifier: string, password: string) => {
-    const session = await request<SessionPayload>('POST', '/security/authentication/login', { identifier, password });
+    const session = await request<SessionPayload>('POST', '${loginPath}', { identifier, password });
     setToken(session.accessToken);
     setTokenState(session.accessToken);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   const value = useMemo<AuthState>(
     () => ({ token, claims: token ? decodeClaims(token) : null, login, logout }),
@@ -280,7 +284,7 @@ export function LoginPage({ appTitle }: { appTitle: string }) {
  */
 function appShell(ctx) {
   const navGroups = new Map();
-  for (const studio of ctx.studios) {
+  for (const studio of ctx.shellStudios || []) {
     if (!navGroups.has(studio.lab)) navGroups.set(studio.lab, []);
     navGroups.get(studio.lab).push(studio);
   }
@@ -349,7 +353,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     <div className="shell">
       <aside className={menuOpen ? 'sidebar open' : 'sidebar'} aria-label="Main navigation">
         <div className="sidebar__brand">
-          ${escapeJsx(ctx.app.ui.title)}
+          ${escapeJsx(ctx.app.title)}
           <small>Chemicalist</small>
         </div>
 ${nav}
@@ -449,10 +453,10 @@ export default function SecureLayout({ children }: { children: ReactNode }) {
   const { token } = useAuth();
 
   if (!token) {
-    return <LoginPage appTitle="${escapeJsx(ctx.app.ui.title)}" />;
+    return <LoginPage appTitle="${escapeJsx(ctx.app.title)}" />;
   }
 
-  return <AppShell title="${escapeJsx(ctx.app.ui.title)}">{children}</AppShell>;
+  return <AppShell title="${escapeJsx(ctx.app.title)}">{children}</AppShell>;
 }
 `;
 }
@@ -462,8 +466,8 @@ function appLoginPage(ctx) {
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { LoginPage } from '../../components/LoginPage';
-import { useAuth } from '../../auth/AuthContext';
+import { LoginPage } from '../components/LoginPage';
+import { useAuth } from '../auth/AuthContext';
 
 export default function LoginRoute() {
   const { token } = useAuth();
@@ -473,7 +477,7 @@ export default function LoginRoute() {
     if (token) router.replace('/');
   }, [token, router]);
 
-  return <LoginPage appTitle="${escapeJsx(ctx.app.ui.title)}" />;
+  return <LoginPage appTitle="${escapeJsx(ctx.app.title)}" />;
 }
 `;
 }
@@ -574,14 +578,15 @@ function nextConfigWithProxy(ctx) {
 // are proxied to the backend; set NEXT_PUBLIC_API_URL to call another origin.
 const apiTarget =
   process.env.API_PROXY_TARGET ?? 'http://localhost:${ctx.app.api.port}';
+const apiPrefix = '${ctx.app.urlPrefix(Boolean(ctx.app.hasVersioning))}';
 
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   async rewrites() {
     return [
       {
-        source: '${ctx.app.urlPrefix(false)}/:path*',
-        destination: apiTarget + '${ctx.app.urlPrefix(false)}/:path*',
+        source: apiPrefix + '/:path*',
+        destination: apiTarget + apiPrefix + '/:path*',
       },
     ];
   },

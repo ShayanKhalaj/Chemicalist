@@ -199,7 +199,9 @@ function validateModelOptions(json, models, modelNames, issues) {
           (candidate) => candidate.name === fieldName,
         );
         if (!field) {
-          issues.push(path + ".dtos." + kind + ": unknown field `" + fieldName + "`");
+          if (!["id", "tenantId", "createdAt", "updatedAt", "deletedAt"].includes(fieldName)) {
+            issues.push(path + ".dtos." + kind + ": unknown field `" + fieldName + "`");
+          }
         } else if (field.generatedByRelation && kind !== "query") {
           issues.push(path + ".dtos." + kind + ": relation field `" + fieldName + "` is not client-writable");
         } else if (
@@ -337,6 +339,9 @@ function validateManifest(json, options = {}) {
   };
   if (options.overrides) {
     const overrides = options.overrides;
+    if (overrides.app && typeof overrides.app === "object") {
+      json.app = { ...(json.app || {}), ...overrides.app };
+    }
     json.persistence = { ...json.persistence, ...(overrides.persistence || {}) };
     json.capabilities = { ...json.capabilities, ...(overrides.capabilities || {}) };
     json.services = { ...json.services, ...(overrides.services || {}) };
@@ -398,7 +403,7 @@ function validateManifest(json, options = {}) {
     corsOrigin:
       typeof rawApp.corsOrigin === "string"
         ? rawApp.corsOrigin
-        : "http://localhost:5173",
+        : "http://localhost:3030",
   };
   if (
     rawApp.apiPrefix !== undefined &&
@@ -670,7 +675,7 @@ function validateManifest(json, options = {}) {
           );
         } else if (
           field.isArray ||
-          !["string", "text"].includes(field.baseType)
+          !["string", "text", "enum"].includes(field.baseType)
         ) {
           issues.push(
             "search." +
@@ -686,7 +691,7 @@ function validateManifest(json, options = {}) {
           (field) =>
             field.name === f &&
             !field.isArray &&
-            ["string", "text"].includes(field.baseType),
+            ["string", "text", "enum"].includes(field.baseType),
         ),
       );
     }
@@ -1005,14 +1010,17 @@ function validateManifest(json, options = {}) {
     issues.push("outputs.frontend: requires outputs.api to be enabled");
   }
   const rawServices = json.services && typeof json.services === "object" ? json.services : {};
+  const serviceNames = ["elasticsearch", "objectStorage", "rabbitmq"];
   const services = {
     elasticsearch: rawServices.elasticsearch === true,
+    objectStorage: rawServices.objectStorage === true,
+    rabbitmq: rawServices.rabbitmq === true,
   };
   if (json.services !== undefined && (!json.services || typeof json.services !== "object" || Array.isArray(json.services))) {
     issues.push("services: must be an object");
   }
   for (const [name, enabled] of Object.entries(rawServices)) {
-    if (name !== "elasticsearch") {
+    if (!serviceNames.includes(name)) {
       issues.push("services." + name + ": unsupported infrastructure service");
     } else if (typeof enabled !== "boolean") {
       issues.push("services." + name + ": must be a boolean");

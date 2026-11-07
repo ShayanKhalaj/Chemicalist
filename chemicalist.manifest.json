@@ -5,7 +5,7 @@
   "description": "Complete Lab and Studio catalog for a multi-tenant chemical-industry platform. Business records are owned by their Lab; cross-Lab links are references, never direct database relations. Fully aligned with chemicalist.studio-template version 3. Copied locally by `chemicalist init`.",
   "expected": {
     "labs": 20,
-    "studios": 99
+    "studios": 100
   },
   "capabilities": {
     "tenantScope": true
@@ -1446,6 +1446,29 @@
             }
           ],
           "description": "RBAC roles, permission grants and assignments."
+        },
+        {
+          "name": "Location",
+          "slug": "location",
+          "entities": [
+            {
+              "name": "Country",
+              "profile": "locationCountry"
+            },
+            {
+              "name": "Region",
+              "profile": "locationRegion"
+            },
+            {
+              "name": "City",
+              "profile": "locationCity"
+            },
+            {
+              "name": "Address",
+              "profile": "locationAddress"
+            }
+          ],
+          "description": "Country, region, city and user address management."
         }
       ]
     },
